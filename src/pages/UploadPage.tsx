@@ -131,7 +131,7 @@ const UploadPage = () => {
             fileList={fileList}
             onChange={({ fileList }) => setFileList(fileList)}
             showUploadList={false}
-            accept=".csv,.xlsx,.xls"
+            accept=".txt,.csv,.xlsx,.xls"
             maxCount={1}
           >
             <Button 

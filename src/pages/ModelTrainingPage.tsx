@@ -155,11 +155,17 @@ const ModelTrainingPage = () => {
       const result = await trainModel(requestData).unwrap();
       
       dispatch(addModel(result));
-      message.success(`模型训练成功！准确率: ${result.metrics.accuracy?.toFixed(2) ?? 'N/A'}`);
+      message.success(`模型训练成功！`);
       setCurrentStep(0);
       form.resetFields();
     } catch (err) {
-      message.error('模型训练失败');
+      message.error(
+        `模型训练失败: ${
+          (err as { data?: { error?: string } })?.data?.error || 
+          (err as Error)?.message || 
+          '未知错误'
+        }`
+      );
       console.error('Training error:', err);
     }
   };
