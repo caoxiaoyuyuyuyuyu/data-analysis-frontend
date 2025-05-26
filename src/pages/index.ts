@@ -1,0 +1,13 @@
+export { default as HomePage } from './HomePage';
+export { default as LoginPage } from './LoginPage';
+export { default as RegisterPage } from './RegisterPage';
+export { default as DashboardPage } from './DashboardPage';
+export { default as PreprocessingPage } from './PreprocessingPage';
+export { default as PreprocessingListPage } from './PreprocessingListPage';
+export { default as PreprocessingHistoryPage } from './PreprocessingHistoryPage';
+export { default as ModelTrainingPage } from './ModelTrainingPage';
+// export { default as PredictionsPage } from './PredictionsPage';
+export { default as HistoryPage } from './HistoryPage';
+export { default as ProfilePage } from './ProfilePage';
+export { default as NotFoundPage } from './NotFoundPage';
+export { default as UploadPage } from './UploadPage';
