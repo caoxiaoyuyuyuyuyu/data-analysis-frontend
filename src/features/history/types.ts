@@ -1,26 +1,3 @@
-export interface TrainingHistory {
-  id: number;
-  file_id: number;
-  file_name: string;
-  model_name: string;
-  model_parameters: Record<string, any>;
-  training_time: string;
-  metrics: {
-    accuracy: number;
-    precision?: number;
-    recall?: number;
-    f1_score?: number;
-    mse?: number;
-    r2?: number;
-    [key: string]: any;
-  };
-  duration: number; // 训练时长(秒)
-  feature_importance?: Array<{
-    feature: string;
-    importance: number;
-  }>;
-}
-
 export interface PredictionHistory {
   id: number;
   model_id: number;

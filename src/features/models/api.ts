@@ -1,28 +1,6 @@
 // features/models/api.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { ModelConfig, ModelTrainingRequest } from '../models/types';
-
-interface Model {
-  id: number;
-  name: string;
-  type: string;
-  file_id: number;
-  file_name: string;
-  created_at: string;
-  metrics: {
-    accuracy: number;
-    precision?: number;
-    recall?: number;
-    f1_score?: number;
-    mse?: number;
-    r2?: number;
-  };
-  parameters: Record<string, any>;
-  feature_importance?: Array<{
-    feature: string;
-    importance: number;
-  }>;
-}
+import { ModelConfig, ModelTrainingRequest, Model } from '../models/types';
 
 interface PredictRequest {
   model_id: number;
@@ -68,8 +46,7 @@ export const modelsApi = createApi({
       providesTags: ['Model'],
       transformResponse: (response: Model[]) => 
         response.map(model => ({
-          ...model,
-          created_at: new Date(model.created_at).toLocaleString(),
+          ...model
         })),
     }),
     

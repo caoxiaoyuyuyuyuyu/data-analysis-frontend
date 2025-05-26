@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { TrainingHistory, PredictionHistory, PreprocessingHistory } from './types';
+import { PredictionHistory, PreprocessingHistory } from './types';
+import { Model } from '../models/types';
+
 
 export const historyApi = createApi({
   reducerPath: 'historyApi',
@@ -16,18 +18,13 @@ export const historyApi = createApi({
   tagTypes: ['TrainingHistory', 'PredictionHistory', 'PreprocessingHistory'],
   endpoints: (builder) => ({
     // 获取训练历史记录
-    getTrainingHistory: builder.query<TrainingHistory[], void>({
+    getTrainingHistory: builder.query<Model[], void>({
       query: () => 'training',
       providesTags: ['TrainingHistory'],
-      transformResponse: (response: TrainingHistory[]) => 
-        response.map(item => ({
-          ...item,
-          training_time: new Date(item.training_time).toLocaleString(),
-        })),
     }),
 
     // 获取单个训练记录详情
-    getTrainingRecord: builder.query<TrainingHistory, number>({
+    getTrainingRecord: builder.query<Model, number>({
       query: (id) => `training/${id}`,
       providesTags: (result, error, id) => [{ type: 'TrainingHistory', id }],
     }),
@@ -91,8 +88,7 @@ export const historyApi = createApi({
         method: 'DELETE',
       }),
       invalidatesTags: ['PreprocessingHistory'],
-    }),
-    
+    })
   }),
 });
 
