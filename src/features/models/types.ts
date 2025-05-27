@@ -3,6 +3,7 @@ export interface Model {
   id: number;
   file_id: number;
   file_name: string;
+  model_type: string;
   model_name: string;
   duration: number;
   metrics: ModelMetrics;
