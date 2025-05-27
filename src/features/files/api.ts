@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-import { UserFile } from '../../types/files';
+import { UserFile, FileCheckResult } from '../../types/files';
 
 export const filesApi = createApi({
   reducerPath: 'filesApi',
@@ -56,6 +56,29 @@ export const filesApi = createApi({
       }),
       invalidatesTags: ['Files'],
     }),
+    // 新增文件检查端点
+    checkPredictFile: builder.mutation<FileCheckResult, { file: File; modelId?: number }>({
+      query: ({ file, modelId }) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (modelId) {
+          formData.append('model_id', modelId.toString());
+        }
+        return {
+          url: 'check',
+          method: 'POST',
+          body: formData,
+        };
+      },
+    }),
+    downloadFile: builder.mutation<Blob, number>({
+      query: (id) => ({
+        url: `/${id}/download`,
+        method: 'GET',
+        responseHandler: (response) => response.blob(),
+      }),
+      invalidatesTags: ['Files'],
+    })
   }),
 });
 
@@ -65,4 +88,6 @@ export const {
   useGetFileByIdQuery,
   useDeleteFileMutation,
   usePreprocessFileMutation,
+  useCheckPredictFileMutation,
+  useDownloadFileMutation,
 } = filesApi;

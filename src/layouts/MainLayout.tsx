@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout, setCredentials } from '../features/auth/slice';
-import { useEffect, useState } from 'react';
+import { Children, useEffect, useState } from 'react';
 import { useVerifyTokenQuery, useLogoutMutation } from '../features/auth/api';
 
 const { Header, Content, Sider } = Layout;
@@ -110,24 +110,14 @@ const MainLayout = () => {
       label: <Link to="/dashboard">仪表盘</Link>,
     },
     {
-      key: 'preprocessing',
-      icon: <ToolOutlined />,
-      label: '数据预处理',
-      children: [
-        {
-          key: 'preprocessing-list',
-          label: <Link to="/preprocessing">所有预处理任务</Link>,
-        },
-        {
-          key: 'preprocessing-history',
-          label: <Link to="/preprocessing/history">处理记录</Link>,
-        }
-      ]
-    },
-    {
       key: 'upload',
       icon: <UploadOutlined />,
       label: <Link to="/upload">数据上传</Link>,
+    },
+    {
+      key: 'preprocessing',
+      icon: <ToolOutlined />,
+      label: <Link to="/preprocessing">数据预处理</Link>
     },
     {
       key: 'training',
@@ -142,7 +132,25 @@ const MainLayout = () => {
     {
       key: 'history',
       icon: <HistoryOutlined />,
-      label: <Link to="/history">历史记录</Link>,
+      label: "历史记录",
+      children: [
+        {
+          key: 'history-preprocessing',
+          icon: <ToolOutlined />,
+          label: <Link to="/history/preprocessing">预处理记录</Link>,
+        },
+        {
+          key: 'history-training',
+          icon: <ExperimentOutlined />,
+          label: <Link to="/history/training">训练记录</Link>,
+        },
+        {
+          key: 'history-predictions',
+          icon: <LineChartOutlined />,
+          label: <Link to="/history/predictions">预测记录</Link>,
+        }
+      ]
+
     },
     {
       key: 'profile',
@@ -161,8 +169,10 @@ const MainLayout = () => {
     if (path === '/predictions') return ['predictions'];
     if (path === '/history') return ['history'];
     if (path === '/profile') return ['profile'];
-    if (path === '/preprocessing') return ['preprocessing-list'];
-    if (path === '/preprocessing/history') return ['preprocessing-history'];
+    if (path === '/preprocessing') return ['preprocessing'];
+    if (path === '/history/preprocessing') return ['history', 'history-preprocessing'];
+    if (path === '/history/training') return ['history', 'history-training'];
+    if (path === '/history/predictions') return ['history', 'history-predictions'];
     return [];
   };
 

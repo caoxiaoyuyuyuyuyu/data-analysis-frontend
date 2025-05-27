@@ -7,11 +7,13 @@ import {
   DownloadOutlined,
   ClockCircleOutlined
 } from '@ant-design/icons';
-import { useGetFilesQuery } from '../features/files/api';
+import { useGetFilesQuery, useDownloadFileMutation } from '../features/files/api';
 import { useGetTrainingHistoryQuery } from '../features/history/api';
 import { useAppSelector } from '../store/hooks';
 import dayjs from 'dayjs';
 import React from 'react';
+import { message } from 'antd';
+import { UserFile } from '../types/files';
 
 const { Title } = Typography;
 
@@ -28,6 +30,33 @@ const DashboardPage = () => {
   const { data: files, isLoading: filesLoading } = useGetFilesQuery();
   const { data: history, isLoading: historyLoading } = useGetTrainingHistoryQuery();
   const { user } = useAppSelector((state) => state.auth);
+  const [downloadFile] = useDownloadFileMutation();
+
+  const HandleDownlad = async (file: UserFile) => {
+  try {
+    // 调用下载API
+    const fileId = file.id;
+    const result = await downloadFile(fileId).unwrap();
+    
+    // 假设后端返回的是一个 Blob 对象
+    const url = window.URL.createObjectURL(new Blob([result]));
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // 设置下载文件名（推荐从 response headers 中获取，这里假设是固定命名）
+    link.setAttribute('download', file.file_name); // 可根据接口修改扩展名
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('文件下载失败:', error);
+    message.error('文件下载失败');
+  }
+  };
 
   const stats = [
     {
@@ -45,7 +74,7 @@ const DashboardPage = () => {
     {
       title: '最佳准确率',
       value: history?.length 
-        ? `${Math.max(...history.map(h => h.metrics.accuracy)) * 100}%` 
+        ? `${(Math.max(...history.map(h => h.metrics.accuracy || h.metrics.r2 || 0.0)) * 100).toFixed(2)}%`
         : '0%',
       icon: <LineChartOutlined />,
       color: '#faad14'
@@ -128,6 +157,10 @@ const DashboardPage = () => {
                   {dayjs(file.upload_time).format('YYYY-MM-DD')}
                 </Tag>,
                 <DownloadOutlined 
+                  key="download"
+                  onClick={() => {
+                    HandleDownlad(file)
+                  }}
                   style={{ color: '#1890ff', fontSize: '18px', cursor: 'pointer' }}
                 />
               ]}

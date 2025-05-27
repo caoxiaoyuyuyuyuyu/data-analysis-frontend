@@ -9,7 +9,7 @@ import {
   PreprocessingListPage,
   PreprocessingHistoryPage,
   ModelTrainingPage,
-  HistoryPage,
+  TrainingHistoryPage,
   ProfilePage,
   NotFoundPage,
   UploadPage,
@@ -29,11 +29,11 @@ function App() {
           <Route path="upload" element={<UploadPage />} />
           <Route path="preprocessing" element={<PreprocessingListPage />} />
           <Route path="predictions" element={<PredictionPage />} />
-          <Route path="predictions/history" element={<PredictionsHistoryPage />} />
-          <Route path="preprocessing/history" element={<PreprocessingHistoryPage />} />
+          <Route path="history/predictions" element={<PredictionsHistoryPage />} />
+          <Route path="history/preprocessing" element={<PreprocessingHistoryPage />} />
+          <Route path="history/training" element={<TrainingHistoryPage />} />
           <Route path="preprocessing/:fileId" element={<PreprocessingPage />} />
           <Route path="training" element={<ModelTrainingPage />} />
-          <Route path="history" element={<HistoryPage />} />
           <Route path="profile" element={<ProfilePage />} />
           {/* 添加重定向 */}
           <Route path="/home" element={<Navigate to="/" replace />} />

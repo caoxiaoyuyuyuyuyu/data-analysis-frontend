@@ -14,3 +14,15 @@ export interface UserFile {
     sample_data: Record<string, any>[];
   };
 }
+export interface FileCheckResult {
+  valid: boolean;
+  message?: string;
+  code?: string;
+  stats?: {
+    rows: number;
+    columns: number;
+    feature_columns?: string[];
+  };
+  missing_columns?: string[];
+  errors?: Record<string, string>;
+}
