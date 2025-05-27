@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { PredictionHistory, PreprocessingHistory } from './types';
+import { PreprocessingHistory, PredictionHistory } from './types';
 import { Model } from '../models/types';
 
 
@@ -15,18 +15,18 @@ export const historyApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['TrainingHistory', 'PredictionHistory', 'PreprocessingHistory'],
+  tagTypes: ['Model', 'PredictionHistory', 'PreprocessingHistory'],
   endpoints: (builder) => ({
     // 获取训练历史记录
     getTrainingHistory: builder.query<Model[], void>({
       query: () => 'training',
-      providesTags: ['TrainingHistory'],
+      providesTags: ['Model'],
     }),
 
     // 获取单个训练记录详情
     getTrainingRecord: builder.query<Model, number>({
       query: (id) => `training/${id}`,
-      providesTags: (result, error, id) => [{ type: 'TrainingHistory', id }],
+      providesTags: (result, error, id) => [{ type: 'Model', id }],
     }),
 
     // 删除训练记录
@@ -35,33 +35,7 @@ export const historyApi = createApi({
         url: `training/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['TrainingHistory'],
-    }),
-
-    // 获取预测历史记录
-    getPredictionHistory: builder.query<PredictionHistory[], void>({
-      query: () => 'prediction',
-      providesTags: ['PredictionHistory'],
-      transformResponse: (response: PredictionHistory[]) =>
-        response.map(item => ({
-          ...item,
-          prediction_time: new Date(item.prediction_time).toLocaleString(),
-        })),
-    }),
-
-    // 获取单个预测记录详情
-    getPredictionRecord: builder.query<PredictionHistory, number>({
-      query: (id) => `prediction/${id}`,
-      providesTags: (result, error, id) => [{ type: 'PredictionHistory', id }],
-    }),
-
-    // 删除预测记录
-    deletePredictionRecord: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `prediction/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['PredictionHistory'],
+      invalidatesTags: ['Model'],
     }),
 
     // 获取预处理历史记录
@@ -88,7 +62,30 @@ export const historyApi = createApi({
         method: 'DELETE',
       }),
       invalidatesTags: ['PreprocessingHistory'],
-    })
+    }),
+    // 预测历史记录相关端点 (新增)
+    getPredictionHistory: builder.query<PredictionHistory[], void>({
+      query: () => 'prediction',
+      providesTags: ['PredictionHistory'],
+      transformResponse: (response: PredictionHistory[]) => 
+        response.map(item => ({
+          ...item,
+          predict_time: new Date(item.predict_time).toLocaleString(),
+        })),
+    }),
+
+    getPredictionRecord: builder.query<PredictionHistory, number>({
+      query: (id) => `prediction/${id}`,
+      providesTags: (result, error, id) => [{ type: 'PredictionHistory', id }],
+    }),
+
+    deletePredictionRecord: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `prediction/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['PredictionHistory'],
+    }),
   }),
 });
 
@@ -99,6 +96,7 @@ export const {
   useGetTrainingHistoryQuery,
   useGetTrainingRecordQuery,
   useDeleteTrainingRecordMutation,
+  // 预测历史 (新增)
   useGetPredictionHistoryQuery,
   useGetPredictionRecordQuery,
   useDeletePredictionRecordMutation,

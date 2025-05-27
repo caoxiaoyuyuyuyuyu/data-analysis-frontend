@@ -13,6 +13,8 @@ import {
   ProfilePage,
   NotFoundPage,
   UploadPage,
+  PredictionPage,
+  PredictionsHistoryPage
 } from './pages';
 
 function App() {
@@ -26,6 +28,8 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="upload" element={<UploadPage />} />
           <Route path="preprocessing" element={<PreprocessingListPage />} />
+          <Route path="predictions" element={<PredictionPage />} />
+          <Route path="predictions/history" element={<PredictionsHistoryPage />} />
           <Route path="preprocessing/history" element={<PreprocessingHistoryPage />} />
           <Route path="preprocessing/:fileId" element={<PreprocessingPage />} />
           <Route path="training" element={<ModelTrainingPage />} />

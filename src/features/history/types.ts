@@ -1,12 +1,3 @@
-export interface PredictionHistory {
-  id: number;
-  model_id: number;
-  model_name: string;
-  prediction_time: string;
-  input_summary: string;
-  output_summary: string;
-}
-
 export interface PreprocessingHistory {
   id: number;
   file_id: number;
@@ -23,4 +14,19 @@ export interface PreprocessingHistory {
   rows_after: number;
   columns_before: number;
   columns_after: number;
+}
+// features/predict/types.ts
+export interface PredictionHistory {
+  id: number;
+  model_id: number;
+  model_name: string;
+  model_type: string;
+  predict_time: string;
+  input_summary: string;
+  output_summary: string;
+  status: 'completed' | 'failed' | 'processing';
+  duration: number;
+  input_data?: Record<string, any>;  // 可选字段，包含原始输入数据
+  output_data?: any[];               // 可选字段，包含原始输出数据
+  error_message?: string;
 }

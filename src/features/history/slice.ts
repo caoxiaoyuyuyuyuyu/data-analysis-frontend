@@ -1,11 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { TrainingHistory, PredictionHistory, PreprocessingHistory } from './types';
+import { PredictionHistory, PreprocessingHistory } from './types';
+import { Model } from '../models/types';
 
 interface HistoryState {
-  trainingHistory: TrainingHistory[];
+  trainingHistory: Model[];
   predictionHistory: PredictionHistory[];
   preprocessingHistory: PreprocessingHistory[];
-  currentTrainingRecord: TrainingHistory | null;
+  currentTrainingRecord: Model | null;
   currentPredictionRecord: PredictionHistory | null;
   isLoading: boolean;
   error: string | null;
@@ -25,19 +26,19 @@ const historySlice = createSlice({
   name: 'history',
   initialState,
   reducers: {
-    setTrainingHistory: (state, action: PayloadAction<TrainingHistory[]>) => {
+    setTrainingHistory: (state, action: PayloadAction<Model[]>) => {
       state.trainingHistory = action.payload;
     },
     setPredictionHistory: (state, action: PayloadAction<PredictionHistory[]>) => {
       state.predictionHistory = action.payload;
     },
-    setCurrentTrainingRecord: (state, action: PayloadAction<TrainingHistory | null>) => {
+    setCurrentTrainingRecord: (state, action: PayloadAction<Model | null>) => {
       state.currentTrainingRecord = action.payload;
     },
     setCurrentPredictionRecord: (state, action: PayloadAction<PredictionHistory | null>) => {
       state.currentPredictionRecord = action.payload;
     },
-    addTrainingRecord: (state, action: PayloadAction<TrainingHistory>) => {
+    addTrainingRecord: (state, action: PayloadAction<Model>) => {
       state.trainingHistory.unshift(action.payload);
     },
     addPredictionRecord: (state, action: PayloadAction<PredictionHistory>) => {
