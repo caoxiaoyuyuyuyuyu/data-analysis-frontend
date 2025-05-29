@@ -48,6 +48,7 @@ const ModelTrainingPage = () => {
   const dispatch = useAppDispatch();
   // 在组件内部添加以下状态
   const [trainingResult, setTrainingResult] = useState<Model | null>(null);
+  const [useDefaultParams, setUseDefaultParams] = useState(true); // 新增状态：是否使用默认参数
   
   // API hooks
   const { data: files, isLoading: isFilesLoading } = useGetFilesQuery();
@@ -71,7 +72,8 @@ const ModelTrainingPage = () => {
   const renderParameterInput = (param: ModelParameter) => {
     const commonProps = {
       defaultValue: param.default,
-      placeholder: param.description
+      placeholder: param.description,
+      disabled: useDefaultParams // 根据 useDefaultParams 控制禁用状态
     };
 
     switch(param.type) {
@@ -141,8 +143,9 @@ const ModelTrainingPage = () => {
         target_column: form.getFieldValue('target_column'),
         model_config: {
           model_type: form.getFieldValue(['model_config', 'model_type']),
-          parameters: form.getFieldValue(['model_config', 'parameters']) || {}
+          parameters: useDefaultParams ? {} : form.getFieldValue(['model_config', 'parameters']) || {} // 根据 useDefaultParams 决定是否使用自定义参数
         },
+        use_default: useDefaultParams,
         test_size: form.getFieldValue('test_size') || 0.2,
         model_name: form.getFieldValue('model_name') || `model_${new Date().getTime()}`
       };
@@ -154,6 +157,7 @@ const ModelTrainingPage = () => {
         file_id: values.file_id,
         target_column: values.target_column,
         model_config: values.model_config,
+        use_default: values.use_default,
         test_size: values.test_size,
         model_name: values.model_name
       };
@@ -502,6 +506,23 @@ const ModelTrainingPage = () => {
           {/* 步骤3内容 */}
           {currentStep === 2 && (
             <>
+              <Alert 
+                message="请选择是否使用默认参数，并设置训练参数" 
+                type="info" 
+                style={{ marginBottom: 16 }}
+              />
+              <Form.Item
+                name="useDefaultParams"
+                label="是否使用默认参数"
+                rules={[{ required: true, message: '请选择是否使用默认参数' }]}
+              >
+                <Select
+                  onChange={(value) => setUseDefaultParams(value === 'yes')}
+                >
+                  <Option value="yes">是</Option>
+                  <Option value="no">否</Option>
+                </Select>
+              </Form.Item>
               <Alert 
                 message="配置模型参数" 
                 type="info" 
