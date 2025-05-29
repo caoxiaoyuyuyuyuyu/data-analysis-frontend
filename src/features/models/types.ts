@@ -65,6 +65,7 @@ export interface ModelTrainingRequest {
     model_type: string;
     parameters?: Record<string, any>;
   };
+  use_default?: boolean; // 是否使用默认参数
   test_size?: number;
   model_name?: string;
 }
