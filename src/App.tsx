@@ -14,7 +14,8 @@ import {
   NotFoundPage,
   UploadPage,
   PredictionPage,
-  PredictionsHistoryPage
+  PredictionsHistoryPage,
+  FilePreviewPage
 } from './pages';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="register" element={<RegisterPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="upload" element={<UploadPage />} />
+          <Route path="file-preview/:fileId" element={<FilePreviewPage />} />
           <Route path="preprocessing" element={<PreprocessingListPage />} />
           <Route path="predictions" element={<PredictionPage />} />
           <Route path="history/predictions" element={<PredictionsHistoryPage />} />

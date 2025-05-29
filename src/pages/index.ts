@@ -12,3 +12,4 @@ export { default as NotFoundPage } from './NotFoundPage';
 export { default as UploadPage } from './UploadPage';
 export { default as PredictionPage } from './PredictionPage';
 export { default as PredictionsHistoryPage } from './PredictionsHistoryPage';
+export { default as FilePreviewPage } from './FilePreviewPage';

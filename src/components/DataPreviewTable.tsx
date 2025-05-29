@@ -20,6 +20,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { FileDataResponse } from '../features/preprocessing/api';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -55,17 +56,6 @@ interface Statistics {
     std?: Record<string, number>;
   };
   shape?: [number, number];
-}
-
-interface FileDataResponse {
-  metadata: {
-    file_id: number;
-    file_name: string;
-    rows: number;
-    columns: number;
-  };
-  preview?: PreviewData;
-  statistics?: Statistics;
 }
 
 const ResizableTitle: React.FC<ResizableColumnProps & { [key: string]: any }> = (props) => {
@@ -152,7 +142,10 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 
     return statsData;
   };
 
-  const statisticsData = getStatisticsTableData();
+  const statisticsData = getStatisticsTableData().map((item, index) => ({ 
+    ...item,
+    key: index.toString(),
+  }));
   const allColumns = previewData?.columns || [];
 
   // 准备统计表格列
@@ -316,7 +309,7 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 
           <Descriptions.Item label="行数">{data?.metadata.rows}</Descriptions.Item>
           <Descriptions.Item label="列数">{data?.metadata.columns}</Descriptions.Item>
           <Descriptions.Item label="数据维度" span={2}>
-            {stats?.shape?.[0]} 行 × {stats?.shape?.[1]} 列
+            {data?.metadata.rows} 行 × {data?.metadata.columns} 列
           </Descriptions.Item>
         </Descriptions>
       </Card>

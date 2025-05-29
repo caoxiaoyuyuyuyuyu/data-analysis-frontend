@@ -114,11 +114,11 @@ const MainLayout = () => {
       icon: <UploadOutlined />,
       label: <Link to="/upload">数据上传</Link>,
     },
-    {
-      key: 'preprocessing',
-      icon: <ToolOutlined />,
-      label: <Link to="/preprocessing">数据预处理</Link>
-    },
+    // {
+    //   key: 'preprocessing',
+    //   icon: <ToolOutlined />,
+    //   label: <Link to="/preprocessing">数据预处理</Link>
+    // },
     {
       key: 'training',
       icon: <ExperimentOutlined />,

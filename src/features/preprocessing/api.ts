@@ -18,6 +18,12 @@ export interface FileDataResponse {
     dtypes: Record<string, string>;
   };
 }
+export interface PreprocessingResponse {
+  message: string;
+  processed_record_id: number;
+  processed_file_id:  number
+}
+
 
 export const preprocessingApi = createApi({
   reducerPath: 'preprocessingApi',
@@ -43,22 +49,23 @@ export const preprocessingApi = createApi({
         return response;
       },
     }),
-    preprocessFile: builder.mutation<{ message: string }, { 
+    preprocessFile: builder.mutation<PreprocessingResponse, { 
       fileId: number;
       step: {
         type: 'missing_values' | 'feature_scaling' | 'encoding';
         params: any;
       };
+      processed_record_id: number |  null;
     }>({
-      query: ({ fileId, step }) => ({
+      query: ({ fileId, step, processed_record_id }) => ({
         url: `/${fileId}`,
         method: 'POST',
-        body: { step },
+        body: { step, "processed_record_id": processed_record_id },
       }),
       invalidatesTags: (result, error, { fileId }) => [
         { type: 'FileData', id: fileId },
       ],
-      transformResponse: (response: { message: string }) => {
+      transformResponse: (response: PreprocessingResponse) => {
         console.log('usePreprocessFileMutation', response)
         return response;
       },

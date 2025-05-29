@@ -8,14 +8,25 @@ import MissingValuesPanel from '../components/MissingValuesPanel';
 import FeatureScalingPanel from '../components/FeatureScalingPanel';
 import EncodingPanel from '../components/EncodingPanel';
 import { useAppDispatch } from '../store/hooks';
+import { set } from 'date-fns';
 
 const PreprocessingPage = () => {
-  const { fileId } = useParams<{ fileId: string }>();
+  const orignalFileId = useParams<{ fileId: string }>().fileId;
+  const [fileId, setfileId] = useState<number | null>(Number(orignalFileId));
   const dispatch = useAppDispatch();
-  const { data: file, isLoading } = useGetFileByIdQuery(Number(fileId));
   const [preprocessFile] = usePreprocessFileMutation();
   const [activeTab, setActiveTab] = useState('preview');
+  const [processedRecordId, setprocessedRecordId] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (!fileId) {
+      setfileId(Number(orignalFileId));
+    }
+    console.log('fileId', fileId);
+  }, []);
+
+  const { data: original_file } = useGetFileByIdQuery(Number(orignalFileId));
+  const { data: file, isLoading } = useGetFileByIdQuery(Number(fileId));
   useEffect(() => {
     if (file) {
       // dispatch();
@@ -27,11 +38,15 @@ const PreprocessingPage = () => {
     params: any 
   }) => {
     try {
-      await preprocessFile({
+      const response = await preprocessFile({
         fileId: Number(fileId),
         step,  // 将 step 作为单独的对象传递
+        processed_record_id: processedRecordId
       }).unwrap();
       message.success(`${step.type} 处理已应用`);
+      console.log('response', response);
+      setprocessedRecordId(response.processed_record_id);
+      setfileId(response.processed_file_id);
     } catch (err) {
       message.error('处理失败');
     }
@@ -86,7 +101,7 @@ const PreprocessingPage = () => {
 
   return (
     <Card
-      title={`数据预处理 - ${file?.file_name || '文件加载中...'}`}
+      title={`数据预处理 - ${original_file?.file_name || '文件加载中...'}`}
       loading={isLoading}
     >
       <Tabs

@@ -89,7 +89,7 @@ const PredictionPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('model_id', selectedModel);
+      formData.append('training_record_id', selectedModel);
       
       const result = await predict(formData).unwrap();
       setPredictionResult(result);

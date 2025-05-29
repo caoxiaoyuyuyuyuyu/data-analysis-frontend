@@ -8,7 +8,8 @@ export interface UserFile {
   file_type?: string;
   upload_time: string;
   description?: string;
-  is_processed: boolean;
+  parent_id: number;
+  children: UserFile[];
   preview?: {
     columns: string[];
     sample_data: Record<string, any>[];

@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Upload, Button, message, Card, Space, Table, Typography, Tag, Spin, Alert } from 'antd';
-import { UploadOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { useUploadFileMutation, useGetFilesQuery, useDeleteFileMutation } from '../features/files/api';
-import { useNavigate } from 'react-router-dom';
+import { UploadOutlined, DeleteOutlined, EditOutlined, DownloadOutlined, DownOutlined, RightOutlined } from '@ant-design/icons';
+import { useUploadFileMutation, useGetFilesQuery, useDeleteFileMutation, useDownloadFileMutation } from '../features/files/api';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserFile } from '../types/files';
+import moment from 'moment';
 
-const { Title, Text } = Typography;
+
+const { Title } = Typography;
 
 const UploadPage = () => {
   const { 
@@ -15,24 +17,56 @@ const UploadPage = () => {
     error,
     refetch 
   } = useGetFilesQuery(undefined, {
-    refetchOnMountOrArgChange: true, // 添加这个选项确保每次加载都重新获取
+    refetchOnMountOrArgChange: true,
   });
   
   const [uploadFile, { isLoading: isUploading }] = useUploadFileMutation();
   const [deleteFile] = useDeleteFileMutation();
   const [fileList, setFileList] = useState<any[]>([]);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<number[]>([]);
   const navigate = useNavigate();
+  const [downloadFile] = useDownloadFileMutation();
 
-  // 调试日志
-  // useEffect(() => {
-  //   console.log('filesResponse:', filesResponse);
-  //   console.log('isLoading:', isLoading);
-  //   console.log('isError:', isError);
-  //   console.log('error:', error);
-  // }, [filesResponse, isLoading, isError, error]);
-
-  // 处理undefined情况，确保files总是数组
   const files = Array.isArray(filesResponse) ? filesResponse : [];
+
+  // 构建树形结构数据
+  const buildFileTree = (files: UserFile[]) => {
+    const rootFiles = files.filter(file => !file.parent_id);
+    const childFilesMap = files.reduce((acc, file) => {
+      if (file.parent_id) {
+        if (!acc[file.parent_id]) {
+          acc[file.parent_id] = [];
+        }
+        acc[file.parent_id].push(file);
+      }
+      return acc;
+    }, {} as Record<number, UserFile[]>);
+
+    return rootFiles.map(file => ({
+      ...file,
+      children: childFilesMap[file.id] || [],
+    }));
+  };
+
+  const fileTreeData = buildFileTree(files);
+
+  const HandleDownlad = async (file: UserFile) => {
+    try {
+      const fileId = file.id;
+      const result = await downloadFile(fileId).unwrap();
+      const url = window.URL.createObjectURL(new Blob([result]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', file.file_name);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('文件下载失败:', error);
+      message.error('文件下载失败');
+    }
+  };
 
   const handleUpload = async (options: any) => {
     const { file, onSuccess, onError } = options;
@@ -44,7 +78,7 @@ const UploadPage = () => {
       await uploadFile(formData).unwrap();
       message.success(`${file.name} 上传成功`);
       onSuccess(null, file);
-      refetch(); // 强制刷新文件列表
+      refetch();
       setFileList([]);
     } catch (err) {
       message.error(`${file.name} 上传失败`);
@@ -56,9 +90,17 @@ const UploadPage = () => {
     try {
       await deleteFile(id).unwrap();
       message.success('文件删除成功');
-      refetch(); // 强制刷新文件列表
+      refetch();
     } catch (error) {
       message.error('文件删除失败');
+    }
+  };
+
+  const toggleExpand = (record: UserFile) => {
+    if (expandedRowKeys.includes(record.id)) {
+      setExpandedRowKeys(expandedRowKeys.filter(key => key !== record.id));
+    } else {
+      setExpandedRowKeys([...expandedRowKeys, record.id]);
     }
   };
 
@@ -67,6 +109,11 @@ const UploadPage = () => {
       title: '文件名',
       dataIndex: 'file_name',
       key: 'file_name',
+      render: (text: string, record: UserFile) => (
+        <Space>
+          <Link to={`/file-preview/${record.id}`}>{text}</Link>
+        </Space>
+      )
     },
     {
       title: '大小',
@@ -75,12 +122,12 @@ const UploadPage = () => {
       render: (size: number) => `${(size / 1024).toFixed(2)} KB`,
     },
     {
-      title: '状态',
-      dataIndex: 'is_processed',
-      key: 'is_processed',
-      render: (processed: boolean) => (
-        <Tag color={processed ? 'green' : 'orange'}>
-          {processed ? '已处理' : '未处理'}
+      title: '上传时间',
+      dataIndex: 'upload_time',
+      key: 'upload_time',
+      render: (time: string) => (
+        <Tag color="green">
+          {moment(time).format('YYYY-MM-DD HH:mm')}
         </Tag>
       ),
     },
@@ -90,19 +137,35 @@ const UploadPage = () => {
       render: (_: any, record: UserFile) => (
         <Space>
           <Button
+            type='default'
+            icon={<DownloadOutlined />}
+            onClick={() => HandleDownlad(record)}
+          >
+            下载
+          </Button>
+          {record.children?.length > 0 && (
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />}
+            onClick={() => navigate(`/preprocessing/${record.id}`)}
+          >
+            处理
+          </Button>
+          )}
+          <Button
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
             删除
           </Button>
-          {!record.is_processed && (
+          {record.children?.length > 0 && (
             <Button 
-              type="primary" 
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/preprocessing/${record.id}`)}
+              type="dashed" 
+              icon={expandedRowKeys.includes(record.id) ? <DownOutlined /> : <RightOutlined />}
+              onClick={() => toggleExpand(record)}
             >
-              处理
+              {expandedRowKeys.includes(record.id) ? '收起' : '展开'}
             </Button>
           )}
         </Space>
@@ -150,10 +213,16 @@ const UploadPage = () => {
           ) : (
             <Table
               columns={columns}
-              dataSource={files}
+              dataSource={fileTreeData}
               rowKey="id"
               loading={isLoading}
               pagination={false}
+              expandable={{
+                expandedRowKeys,
+                onExpand: () => {}, // 空函数，因为展开由按钮控制
+                rowExpandable: (record) => record.children?.length > 0,
+                expandIcon: () => null,
+              }}
               locale={{
                 emptyText: '暂无上传文件',
               }}
