@@ -1,7 +1,20 @@
-import { Table, Spin, Alert, Typography, Card, Row, Col, Descriptions } from 'antd';
+import { Table, Spin, Alert, Typography, Card, Descriptions } from 'antd';
+import type { ColumnType } from 'antd/es/table';
 import { useGetFileDataQuery } from '../features/preprocessing/api';
+import { Resizable } from 'react-resizable';
+import 'react-resizable/css/styles.css';
+import React from 'react';
 
 const { Text } = Typography;
+
+// 定义可调整大小的列属性
+interface ResizableColumnProps {
+  width?: number;
+  onResize?: (e: React.SyntheticEvent, { size }: { size: { width: number } }) => void;
+}
+
+// 创建兼容 Ant Design 的列类型
+type ResizableColumnType<T> = ColumnType<T> & ResizableColumnProps;
 
 interface DataPreviewTableProps {
   fileId: number;
@@ -38,10 +51,38 @@ interface FileDataResponse {
   statistics?: Statistics;
 }
 
+const ResizableTitle: React.FC<ResizableColumnProps & { [key: string]: any }> = (props) => {
+  const { onResize, width, ...restProps } = props;
+
+  if (!width) {
+    return <th {...restProps} />;
+  }
+
+  return (
+    <Resizable
+      width={width}
+      height={0}
+      onResize={onResize}
+      draggableOpts={{ enableUserSelectHack: false }}
+    >
+      <th {...restProps} />
+    </Resizable>
+  );
+};
+
 const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 5 }) => {
   const { data, isLoading, error } = useGetFileDataQuery(fileId);
   const previewData = (data as FileDataResponse)?.preview;
   const stats = (data as FileDataResponse)?.statistics;
+
+  const [columnsWidth, setColumnsWidth] = React.useState<Record<string, number>>({});
+  
+  const handleResize = (columnKey: string) => (e: React.SyntheticEvent, { size }: { size: { width: number } }) => {
+    setColumnsWidth(prev => ({
+      ...prev,
+      [columnKey]: size.width
+    }));
+  };
 
   if (isLoading) return <Spin tip="加载数据..." />;
   
@@ -50,20 +91,124 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 
     return <Alert message={`加载失败: ${errMsg}`} type="error" />;
   }
 
-  // 处理列定义
-  const columns = previewData?.columns?.map((col) => ({
+  // 准备统计表格数据
+  const getStatisticsTableData = (): Record<string, any>[] => {
+    if (!stats) return [];
+    
+    const allColumns = previewData?.columns || [];
+    const statsData: Record<string, any>[] = [];
+    
+    // 添加数据类型行
+    const dtypeRow: Record<string, any> = { stat_name: '数据类型' };
+    allColumns.forEach(col => {
+      dtypeRow[col] = stats.dtypes?.[col] || 'N/A';
+    });
+    statsData.push(dtypeRow);
+    
+    // 添加缺失值行
+    const missingRow: Record<string, any> = { stat_name: '缺失值' };
+    allColumns.forEach(col => {
+      const count = stats.missing_values?.[col] || 0;
+      const percentage = ((count / (data?.metadata.rows || 1)) * 100).toFixed(2);
+      missingRow[col] = `${count} (${percentage}%)`;
+    });
+    statsData.push(missingRow);
+    
+    // 添加数值统计行
+    if (stats.numeric_stats) {
+      const numericStats = ['min', 'max', 'mean', 'median', 'std'];
+      numericStats.forEach(stat => {
+        if (stats.numeric_stats?.[stat as keyof typeof stats.numeric_stats]) {
+          const row: Record<string, any> = { stat_name: stat };
+          allColumns.forEach(col => {
+            const value = stats.numeric_stats?.[stat as keyof typeof stats.numeric_stats]?.[col];
+            row[col] = typeof value === 'number' ? value.toFixed(2) : value || 'N/A';
+          });
+          statsData.push(row);
+        }
+      });
+    }
+    
+    return statsData;
+  };
+
+  const statisticsData = getStatisticsTableData();
+  const allColumns = previewData?.columns || [];
+
+  // 准备统计表格列
+  // 准备统计表格列
+  const statsColumns: ColumnType<Record<string, any>>[] = [
+    {
+      title: '统计项',
+      dataIndex: 'stat_name',
+      key: 'stat_name',
+      width: columnsWidth['stat_name'] || 120,
+      fixed: 'left' as const,
+      render: (text: string) => <Text strong>{text}</Text>,
+      onHeaderCell: () => ({
+        style: { 
+          padding: '0',
+          position: 'relative' as React.CSSProperties['position']
+        }
+      }),
+      // onResize: handleResize('stat_name')
+    },
+    ...allColumns.map(col => ({
+      title: col,
+      dataIndex: col,
+      key: col,
+      width: columnsWidth[col] || 150,
+      render: (value: any) => {
+        if (value === 'N/A') return <Text type="secondary">{value}</Text>;
+        if (typeof value === 'string' && value.includes('%')) {
+          const [count, percentage] = value.split(' ');
+          return (
+            <span>
+              <Text type={parseInt(count) > 0 ? 'danger' : 'success'}>{count}</Text>{' '}
+              <Text type="secondary">{percentage}</Text>
+            </span>
+          );
+        }
+        return value;
+      },
+      onHeaderCell: () => ({
+        style: { 
+          padding: '0',
+          position: 'relative' as React.CSSProperties['position']
+        }
+      }),
+      onResize: handleResize(col)
+    }))
+  ];
+
+
+  // 原始预览表格列
+  const previewColumns: ColumnType<Record<string, any>>[] = previewData?.columns?.map((col) => ({
     title: <Text strong>{col}</Text>,
     dataIndex: col,
     key: col,
+    width: columnsWidth[`preview_${col}`] || 150,
     ellipsis: true,
-    render: (value: any) => value ?? <span style={{ color: '#ccc' }}>null</span>
+    render: (value: any) => value ?? <span style={{ color: '#ccc' }}>null</span>,
+    onHeaderCell: () => ({
+      style: { 
+        padding: 0,
+        position: 'relative'
+      }
+    }),
+    onResize: handleResize(`preview_${col}`)
   })) || [];
 
-  // 处理数据源
-  const dataSource = previewData?.sample_data?.map((item, index) => ({
+  const previewDataSource = previewData?.sample_data?.map((item, index) => ({
     ...item,
     key: index
   })) || [];
+
+  const components = {
+    header: {
+      cell: ResizableTitle,
+    },
+  };
 
   return (
     <div className="data-preview-container">
@@ -80,63 +225,30 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 
         </Descriptions>
       </Card>
 
-      {/* 数据类型和缺失值统计 */}
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={12}>
-          <Card title="数据类型">
-            {stats?.dtypes && Object.entries(stats.dtypes).map(([col, type]) => (
-              <div key={col} style={{ marginBottom: 8 }}>
-                <Text strong>{col}: </Text>
-                <Text code>{type}</Text>
-              </div>
-            ))}
-          </Card>
-        </Col>
-        <Col span={12}>
-          <Card title="缺失值统计">
-            {stats?.missing_values && Object.entries(stats.missing_values).map(([col, count]) => (
-              <div key={col} style={{ marginBottom: 8 }}>
-                <Text strong>{col}: </Text>
-                <Text type={count > 0 ? 'danger' : 'success'}>
-                  {count} 个缺失值 ({((count / (data?.metadata.rows || 1)) * 100).toFixed(2)}%)
-                </Text>
-              </div>
-            ))}
-          </Card>
-        </Col>
-      </Row>
-
-      {/* 数值统计信息 */}
-      {stats?.numeric_stats && (
-        <Card title="数值统计" style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            {Object.entries(stats.numeric_stats).map(([statName, values]) => (
-              values && (
-                <Col span={6} key={statName}>
-                  <Card title={statName.toUpperCase()} size="small">
-                    {Object.entries(values).map(([col, value]) => (
-                      <div key={col} style={{ marginBottom: 4 }}>
-                        <Text strong>{col}: </Text>
-                        <Text>{typeof value === 'number' ? value.toFixed(2) : String(value)}</Text>
-                      </div>
-                    ))}
-                  </Card>
-                </Col>
-              )
-            ))}
-          </Row>
-        </Card>
-      )}
+      {/* 统计信息表格 */}
+      <Card title="数据统计" style={{ marginBottom: 16 }}>
+        <Table
+          columns={statsColumns}
+          dataSource={statisticsData}
+          pagination={false}
+          scroll={{ x: 'max-content' }}
+          size="middle"
+          bordered
+          components={components}
+          rowClassName={() => 'stats-row'}
+        />
+      </Card>
 
       {/* 数据预览表格 */}
       <Card title="数据预览">
         <Table
-          columns={columns}
-          dataSource={dataSource}
+          columns={previewColumns}
+          dataSource={previewDataSource}
           pagination={{ pageSize }}
           scroll={{ x: 'max-content' }}
           size="middle"
           bordered
+          components={components}
           rowClassName={() => 'preview-row'}
         />
       </Card>
@@ -147,6 +259,21 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 
         }
         .preview-row {
           font-family: monospace;
+        }
+        .stats-row {
+          font-family: monospace;
+        }
+        .react-resizable {
+          position: relative;
+        }
+        .react-resizable-handle {
+          position: absolute;
+          width: 10px;
+          height: 100%;
+          bottom: 0;
+          right: -5px;
+          cursor: col-resize;
+          z-index: 1;
         }
       `}</style>
     </div>
