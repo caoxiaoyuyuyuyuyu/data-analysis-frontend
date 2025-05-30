@@ -1,0 +1,50 @@
+@import 'antd/dist/reset.css';
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.ant-layout {
+  background: #fff;
+}
+
+.site-layout .site-layout-background {
+  background: #fff;
+}
+
+.ant-table {
+  overflow-x: auto;
+}
+
+.upload-area {
+  border: 2px dashed #d9d9d9;
+  border-radius: 4px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.upload-area:hover {
+  border-color: #1890ff;
+}
+
+.model-card {
+  transition: all 0.3s;
+}
+
+.model-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
