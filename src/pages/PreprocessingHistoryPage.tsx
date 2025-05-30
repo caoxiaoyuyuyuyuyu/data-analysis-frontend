@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Table, Space, Button, Popconfirm, message, Tag, Card } from 'antd';
+// PreprocessingHistoryPage.tsx
+import { useState } from 'react';
+import { Table, Space, Button, Popconfirm, message, Tag, Card, Descriptions, Badge } from 'antd';
 import { 
   DeleteOutlined, 
   FileSearchOutlined,
-  CloudDownloadOutlined 
+  CloudDownloadOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons';
 import { 
   useGetPreprocessingHistoryQuery,
   useDeletePreprocessingRecordMutation 
 } from '../features/history/api';
-import { useAppDispatch } from '../store/hooks';
-import { setPreprocessingHistory } from '../features/history/slice';
 import DetailModal from '../components/PreprocessingDetailModal';
 import { PreprocessingHistory } from '../features/history/types';
 
 const PreprocessingHistoryPage = () => {
-  const dispatch = useAppDispatch();
   const { 
-    data: historyData, 
+    data: historyData = [], 
     isLoading, 
     isError,
     refetch 
@@ -25,18 +24,11 @@ const PreprocessingHistoryPage = () => {
   const [deleteRecord] = useDeletePreprocessingRecordMutation();
   const [selectedRecord, setSelectedRecord] = useState<PreprocessingHistory | null>(null);
 
-  // 当数据加载完成后更新Redux store
-  useEffect(() => {
-    if (historyData) {
-      dispatch(setPreprocessingHistory(historyData));
-    }
-  }, [historyData, dispatch]);
-
   const handleDelete = async (id: number) => {
     try {
       await deleteRecord(id).unwrap();
       message.success('记录删除成功');
-      refetch(); // 删除后重新获取数据
+      refetch();
     } catch (err) {
       message.error('删除记录失败');
     }
@@ -49,46 +41,78 @@ const PreprocessingHistoryPage = () => {
     link.click();
   };
 
-  
   const columns = [
     {
-      title: '文件名',
-      dataIndex: 'original_filename',
-      key: 'filename',
-      render: (text: string, record: PreprocessingHistory) => (
-        <div>
-          <div>原始文件：{text}</div>
-          <div>处理后：{record.processed_filename}</div>
-        </div>
+      title: '文件信息',
+      dataIndex: 'original_file',
+      key: 'file_info',
+      render: (original: any, record: PreprocessingHistory) => (
+        <Space direction="vertical" size="small">
+          <div>
+            <Tag color="blue">原始文件</Tag>
+            <span>{original.file_name}</span>
+          </div>
+          <div>
+            <Tag color="green">处理后文件</Tag>
+            <span>{record.processed_file.file_name}</span>
+          </div>
+        </Space>
       )
     },
     {
-      title: '处理类型',
-      dataIndex: 'operation_type',
-      key: 'operation_type',
-      render: (method: string) => <Tag color="blue">{method}</Tag>
+      title: '处理步骤',
+      dataIndex: 'processing_steps',
+      key: 'steps',
+      render: (steps: any[]) => (
+        <Space direction="vertical" size="small">
+          {steps.map(step => (
+            <Tag key={step.id} color="purple">
+              {step.step_name}: {step.parameters.strategy}
+            </Tag>
+          ))}
+        </Space>
+      )
     },
     {
-      title: '处理时间',
-      dataIndex: 'processing_time',
-      key: 'processing_time'
-    },
-    {
-      title: '数据维度',
-      key: 'dimensions',
+      title: '时间信息',
+      key: 'time_info',
       render: (_: any, record: PreprocessingHistory) => (
-        <div>
-          <div>行数：{record.rows_before} → {record.rows_after}</div>
-          <div>列数：{record.columns_before} → {record.columns_after}</div>
-        </div>
+        <Space direction="vertical" size="small">
+          <div>
+            <Tag icon={<InfoCircleOutlined />}>创建时间</Tag>
+            <span>{record.created_at}</span>
+          </div>
+          <div>
+            <Tag icon={<InfoCircleOutlined />}>处理耗时</Tag>
+            <span>{stepsTotalDuration(record.processing_steps)}</span>
+          </div>
+        </Space>
+      )
+    },
+    {
+      title: '文件大小',
+      key: 'file_size',
+      render: (_: any, record: PreprocessingHistory) => (
+        <Space direction="vertical" size="small">
+          <div>
+            <Tag color="blue">原始大小</Tag>
+            <span>{record.original_file.file_size}</span>
+          </div>
+          <div>
+            <Tag color="green">处理后大小</Tag>
+            <span>{record.processed_file.file_size}</span>
+          </div>
+        </Space>
       )
     },
     {
       title: '操作',
       key: 'actions',
+      width: 200,
       render: (_: any, record: PreprocessingHistory) => (
         <Space size="middle">
           <Button
+            type="primary"
             icon={<FileSearchOutlined />}
             onClick={() => setSelectedRecord(record)}
           >
@@ -101,8 +125,9 @@ const PreprocessingHistoryPage = () => {
             <Button danger icon={<DeleteOutlined />}>删除</Button>
           </Popconfirm>
           <Button 
+            type="default"
             icon={<CloudDownloadOutlined />}
-            onClick={() => handleDownload(record.processed_filename)}
+            onClick={() => handleDownload(record.processed_file.file_name)}
           >
             下载
           </Button>
@@ -111,24 +136,60 @@ const PreprocessingHistoryPage = () => {
     }
   ];
 
+  const stepsTotalDuration = (steps: any[]) => {
+    const total = steps.reduce((sum, step) => sum + parseFloat(step.duration), 0);
+    return total.toFixed(2) + 's';
+  };
+
   if (isError) {
     return <div>加载历史记录失败</div>;
   }
 
   return (
-    <Card title="数据预处理记录">
+    <Card 
+      title="数据预处理记录" 
+      bordered={false}
+      headStyle={{ border: 'none' }}
+      bodyStyle={{ padding: '24px' }}
+    >
       <Table
         columns={columns}
-        dataSource={historyData || []}  // 直接使用RTK Query获取的数据
+        dataSource={historyData}
         rowKey="id"
         loading={isLoading}
+        bordered
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showTotal: (total) => `共 ${total} 条记录`
+        }}
         expandable={{
           expandedRowRender: record => (
-            <div>
-              <p><strong>处理参数：</strong></p>
-              <pre>{JSON.stringify(record.parameters, null, 2)}</pre>
+            <div style={{ margin: 0 }}>
+              <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label="处理步骤详情" span={2}>
+                  {record.processing_steps.map(step => (
+                    <div key={step.id} style={{ marginBottom: '16px' }}>
+                      <Tag color="processing">{step.step_name}</Tag>
+                      <span>策略: {step.parameters.strategy}</span>
+                      <span style={{ marginLeft: '16px' }}>耗时: {step.duration}</span>
+                      <div style={{ marginTop: '8px' }}>
+                        <pre style={{ margin: 0 }}>
+                          {JSON.stringify(step.parameters, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  ))}
+                </Descriptions.Item>
+              </Descriptions>
             </div>
-          )
+          ),
+          expandIcon: ({ expanded, onExpand, record }) =>
+            expanded ? (
+              <Button type="text" onClick={e => onExpand(record, e)}>收起详情</Button>
+            ) : (
+              <Button type="text" onClick={e => onExpand(record, e)}>展开详情</Button>
+            )
         }}
       />
 

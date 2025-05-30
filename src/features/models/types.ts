@@ -51,7 +51,8 @@ export interface ModelParameter {
 }
 
 export interface ModelConfig {
-  model_type: string;
+  model_id: number;
+  model_name: string;
   display_name: string;
   category?: 'classification' | 'regression' | 'clustering';
   description?: string;
@@ -62,7 +63,7 @@ export interface ModelTrainingRequest {
   file_id: number;
   target_column: string;
   model_config: {
-    model_type: string;
+    model_id: number;
     parameters?: Record<string, any>;
   };
   use_default?: boolean; // 是否使用默认参数

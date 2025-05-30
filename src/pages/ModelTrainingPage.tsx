@@ -113,8 +113,8 @@ const ModelTrainingPage = () => {
   // 初始化表单值
   useEffect(() => {
     if (modelConfigs.length > 0 && currentStep === 2) {
-      const modelType = form.getFieldValue(['model_config', 'model_type']);
-      const config = modelConfigs.find(c => c.model_type === modelType);
+      const modelId = form.getFieldValue(['model_config', 'model_id']);
+      const config = modelConfigs.find(c => c.model_id === modelId);
       
       if (config) {
         // 初始化所有参数字段
@@ -135,14 +135,14 @@ const ModelTrainingPage = () => {
   const onFinish = async () => {
     try {
       // 1. 首先验证必填字段
-      await form.validateFields(['file_id', 'target_column', ['model_config', 'model_type']]);
+      await form.validateFields(['file_id', 'target_column', ['model_config', 'model_id']]);
       
       // 2. 手动获取所有字段值
       const values = {
         file_id: form.getFieldValue('file_id'),
         target_column: form.getFieldValue('target_column'),
         model_config: {
-          model_type: form.getFieldValue(['model_config', 'model_type']),
+          model_id: form.getFieldValue(['model_config', 'model_id']),
           parameters: useDefaultParams ? {} : form.getFieldValue(['model_config', 'parameters']) || {} // 根据 useDefaultParams 决定是否使用自定义参数
         },
         use_default: useDefaultParams,
@@ -441,7 +441,7 @@ const ModelTrainingPage = () => {
               />
               
               <Form.Item
-                name={['model_config', 'model_type']}
+                name={['model_config', 'model_id']}
                 label="模型类型"
                 rules={[{ required: true, message: '请选择模型类型' }]}
               >
@@ -452,7 +452,7 @@ const ModelTrainingPage = () => {
                   }}
                 >
                   {modelConfigs.map(config => (
-                    <Option key={config.model_type} value={config.model_type}>
+                    <Option key={config.model_id} value={config.model_id}>
                       <Space>
                         <span>{config.display_name}</span>
                         <Tag color={config.category === 'classification' ? 'blue' : (config.category === 'clustering' ? 'pink' : 'orange')}>
@@ -494,7 +494,7 @@ const ModelTrainingPage = () => {
                   <Button 
                     type="primary" 
                     onClick={nextStep}
-                    disabled={!form.getFieldValue(['model_config', 'model_type'])}
+                    disabled={!form.getFieldValue(['model_config', 'model_id'])}
                   >
                     下一步
                   </Button>
@@ -538,14 +538,14 @@ const ModelTrainingPage = () => {
                       <span>高级参数</span>
                       <Tag>
                         {modelConfigs.find(
-                          c => c.model_type === form.getFieldValue(['model_config', 'model_type'])
+                          c => c.model_id === form.getFieldValue(['model_config', 'model_id'])
                         )?.display_name}
                       </Tag>
                     </Space>
                   }
                 >
                   {modelConfigs
-                    .find(c => c.model_type === form.getFieldValue(['model_config', 'model_type']))
+                    .find(c => c.model_id === form.getFieldValue(['model_config', 'model_id']))
                     ?.parameters.map(param => (
                       <Form.Item
                         key={param.name}

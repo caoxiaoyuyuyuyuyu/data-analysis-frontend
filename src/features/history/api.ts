@@ -39,13 +39,28 @@ export const historyApi = createApi({
     }),
 
     // 获取预处理历史记录
+    // features/history/api.ts
     getPreprocessingHistory: builder.query<PreprocessingHistory[], void>({
       query: () => 'preprocessing',
       providesTags: ['PreprocessingHistory'],
-      transformResponse: (response: PreprocessingHistory[]) => 
+      transformResponse: (response: any[]) => 
         response.map(item => ({
           ...item,
-          processing_time: new Date(item.processing_time).toLocaleString(),
+          created_at: new Date(item.created_at).toLocaleString(),
+          processing_steps: item.processing_steps.map((step: any) => ({
+            ...step,
+            duration: step.duration.toFixed(2) + 's'
+          })),
+          original_file: {
+            ...item.original_file,
+            upload_time: new Date(item.original_file.upload_time).toLocaleString(),
+            file_size: (item.original_file.file_size / 1024).toFixed(2) + ' KB'
+          },
+          processed_file: {
+            ...item.processed_file,
+            upload_time: new Date(item.processed_file.upload_time).toLocaleString(),
+            file_size: (item.processed_file.file_size / 1024).toFixed(2) + ' KB'
+          }
         })),
     }),
 
