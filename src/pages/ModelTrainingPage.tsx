@@ -195,7 +195,9 @@ const ModelTrainingPage = () => {
       }
     };
 
-  const prevStep = () => setCurrentStep(currentStep - 1);
+  const prevStep = () => {
+    setCurrentStep(currentStep - 1)
+  };
   const HandleDownlad = async (record_id: number) => {
     try { 
       const result = await downloadModel({record_id: record_id}).unwrap();
@@ -483,6 +485,14 @@ const ModelTrainingPage = () => {
                   placeholder="选择模型类型"
                   onChange={(value) => {
                     setIsModelSelected(!!value);
+                    // 清空参数配置
+                    // form.setFieldsValue({
+                    //   'model_config': {
+                    //     'parameters': {}
+                    //   }
+                    // });
+                    form.getFieldValue('model_config').parameters = {}
+                    console.log('parameters', form.getFieldValue('model_config').parameters)
                   }}
                 >
                   {modelConfigs.map(config => (

@@ -139,7 +139,7 @@ const DashboardPage = () => {
 
       {/* 最近文件列表 */}
       <Card
-        title="最近上传文件"
+        title="最近文件"
         bordered={false}
         style={{
           borderRadius: '16px',

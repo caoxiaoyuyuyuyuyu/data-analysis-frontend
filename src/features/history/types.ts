@@ -32,15 +32,13 @@ export interface PreprocessingHistory {
 // features/predict/types.ts
 export interface PredictionHistory {
   id: number;
-  model_id: number;
-  model_name: string;
-  model_type: string;
+  input_file_id: number;
+  output_file_path: string | null;
+  parameters: any; // 可以是具体类型，如果知道参数结构的话
+  predict_duration: number;
   predict_time: string;
-  input_summary: string;
-  output_summary: string;
   status: 'completed' | 'failed' | 'processing';
-  duration: number;
-  input_data?: Record<string, any>;  // 可选字段，包含原始输入数据
-  output_data?: any[];               // 可选字段，包含原始输出数据
-  error_message?: string;
+  training_record_id: number;
+  user_id: number;
+  error_message: string | null;
 }

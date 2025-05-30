@@ -5,9 +5,7 @@ import {
 } from '../features/history/api';
 import { useState } from 'react';
 import { PredictionHistory } from '../features/history/types';
-// import ReactJson from 'react-json-view';
 import { JSONTree } from 'react-json-tree';
-
 import { format } from 'date-fns';
 import { Key } from 'react';
 
@@ -44,73 +42,46 @@ const PredictionsPage = () => {
     setDeleteConfirmVisible(true);
   };
 
-    const renderInputData = (data: Record<string, any> | undefined) => {
+  const renderInputData = (data: any) => {
     if (!data) return <span>无输入数据</span>;
 
     return (
-        <JSONTree
-        data={data}
-        hideRoot={true}
-        shouldExpandNodeInitially={() => false} // 控制展开逻辑
-        theme={{
-            nestedNodeChildren: {
-            marginLeft: '20px',
-            },
-            valueLabel: {
-            color: '#333',
-            },
-            valueText: {
-            color: '#999',
-            },
-        }}
-        />
-    );
-    };
-
-    const renderOutputData = (data: any[] | undefined) => {
-    if (!data) return <span>无输出结果</span>;
-
-    if (Array.isArray(data)) {
-        return (
-        <div>
-            {data.map((item, index) => (
-            <div key={index} style={{ marginBottom: 8 }}>
-                <JSONTree
-                data={item}
-                hideRoot={true}
-                shouldExpandNodeInitially={(key, data, level) => level < 1}
-                theme={{
-                    valueLabel: { color: '#333' },
-                    valueText: { color: '#999' },
-                    nestedNodeChildren: { marginLeft: '20px' }
-                }}
-                />
-            </div>
-            ))}
-        </div>
-        );
-    }
-
-    return (
-        <JSONTree
+      <JSONTree
         data={data}
         hideRoot={true}
         shouldExpandNodeInitially={() => false}
         theme={{
-            valueLabel: { color: '#333' },
-            valueText: { color: '#999' },
-            nestedNodeChildren: { marginLeft: '20px' }
+          nestedNodeChildren: {
+            marginLeft: '20px',
+          },
+          valueLabel: {
+            color: '#333',
+          },
+          valueText: {
+            color: '#999',
+          },
         }}
-        />
+      />
     );
-};
+  };
+
+  const renderOutputData = (filePath: string | null) => {
+    if (!filePath) return <span>无输出结果</span>;
+    
+    return (
+      <div>
+        <p>预测结果文件路径:</p>
+        <p>{filePath}</p>
+      </div>
+    );
+  };
 
   const columns = [
     {
-      title: '模型名称',
-      dataIndex: 'model_name',
-      key: 'model_name',
-      render: (text: string, record: PredictionHistory) => (
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      render: (text: number, record: PredictionHistory) => (
         <a onClick={() => showDetail(record)}>{text}</a>
       )
     },
@@ -121,20 +92,6 @@ const PredictionsPage = () => {
       render: (text: string) => format(new Date(text), 'yyyy-MM-dd HH:mm:ss'),
       sorter: (a: PredictionHistory, b: PredictionHistory) => 
         new Date(a.predict_time).getTime() - new Date(b.predict_time).getTime()
-    },
-    {
-      title: '模型类型',
-      dataIndex: 'model_type',
-      key: 'model_type',
-      filters: [
-        { text: '分类', value: 'classification' },
-        { text: '回归', value: 'regression' },
-        { text: '聚类', value: 'clustering' }
-      ],
-      onFilter: (value: Key | boolean, record: PredictionHistory) => {
-        // 这里需要根据实际模型类型进行过滤
-        return record.model_type === value;
-      }
     },
     {
       title: '状态',
@@ -159,10 +116,17 @@ const PredictionsPage = () => {
     },
     {
       title: '耗时',
-      dataIndex: 'duration',
+      dataIndex: 'predict_duration',
       key: 'duration',
-      render: (duration: number) => `${duration.toFixed(2)}秒`,
-      sorter: (a: PredictionHistory, b: PredictionHistory) => a.duration - b.duration
+      render: (duration?: number | null) => {
+        if (duration === undefined || duration === null) return '-';
+        return `${Number(duration).toFixed(2)}秒`;
+      },
+      sorter: (a: PredictionHistory, b: PredictionHistory) => {
+        const durationA = a.predict_duration || 0;
+        const durationB = b.predict_duration || 0;
+        return durationA - durationB;
+      }
     },
     {
       title: '操作',
@@ -209,12 +173,14 @@ const PredictionsPage = () => {
           <Tabs defaultActiveKey="1">
             <TabPane tab="基本信息" key="1">
               <Descriptions bordered column={2}>
-                <Descriptions.Item label="模型名称">{selectedPrediction.model_name}</Descriptions.Item>
+                <Descriptions.Item label="ID">{selectedPrediction.id}</Descriptions.Item>
                 <Descriptions.Item label="预测时间">
                   {format(new Date(selectedPrediction.predict_time), 'yyyy-MM-dd HH:mm:ss')}
                 </Descriptions.Item>
                 <Descriptions.Item label="耗时">
-                  {selectedPrediction.duration.toFixed(2)} 秒
+                  {selectedPrediction.predict_duration !== undefined && selectedPrediction.predict_duration !== null 
+                    ? Number(selectedPrediction.predict_duration).toFixed(2) + ' 秒' 
+                    : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label="状态">
                   <Tag color={selectedPrediction.status === 'completed' ? 'green' : 
@@ -228,15 +194,21 @@ const PredictionsPage = () => {
                     {selectedPrediction.error_message}
                   </Descriptions.Item>
                 )}
+                <Descriptions.Item label="训练记录ID" span={2}>
+                  {selectedPrediction.training_record_id}
+                </Descriptions.Item>
+                <Descriptions.Item label="输入文件ID" span={2}>
+                  {selectedPrediction.input_file_id}
+                </Descriptions.Item>
               </Descriptions>
             </TabPane>
             
-            <TabPane tab="输入数据" key="2">
-              {renderInputData(selectedPrediction.input_data)}
+            <TabPane tab="参数" key="2">
+              {renderInputData(selectedPrediction.parameters)}
             </TabPane>
             
             <TabPane tab="预测结果" key="3">
-              {renderOutputData(selectedPrediction.output_data)}
+              {renderOutputData(selectedPrediction.output_file_path)}
             </TabPane>
           </Tabs>
         )}

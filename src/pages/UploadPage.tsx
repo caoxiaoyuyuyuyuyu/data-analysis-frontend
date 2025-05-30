@@ -143,7 +143,7 @@ const UploadPage = () => {
           >
             下载
           </Button>
-          {record.children?.length > 0 && (
+          {record.parent_id == 0 && (
           <Button 
             type="primary" 
             icon={<EditOutlined />}
