@@ -193,7 +193,6 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 
     }))
   ];
 
-
   // 处理列定义
   const columns = previewData?.columns?.map((col) => ({
     title: <Text strong>{col}</Text>,
@@ -202,7 +201,6 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ fileId, pageSize = 
     ellipsis: true,
     render: (value: any) => value ?? <span style={{ color: '#ccc' }}>null</span>
   })) || [];
-
 
   // 原始预览表格列
   const previewColumns: ResizableColumnType<Record<string, any>>[] = previewData?.columns?.map((col) => ({
