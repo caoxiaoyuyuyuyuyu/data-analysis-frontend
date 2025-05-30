@@ -84,11 +84,12 @@ export const modelsApi = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'Model', id }],
     }),
     
-    // 导出模型
-    exportModel: builder.mutation<{ url: string }, number>({
-      query: (id) => ({
-        url: `/${id}/export`,
+    // 根据路径下载模型，POST
+    downloadModel: builder.mutation<Blob, { record_id: number }>({
+      query: ({ record_id }) => ({
+        url: `/download`,
         method: 'POST',
+        body: { record_id },
       }),
     }),
     // 新增获取模型配置的端点
@@ -106,6 +107,6 @@ export const {
   usePredictMutation,
   useDeleteModelMutation,
   useUpdateModelMutation,
-  useExportModelMutation,
   useGetModelConfigsQuery,
+  useDownloadModelMutation,
 } = modelsApi;

@@ -18,6 +18,8 @@ export interface Model {
   model_file_path: string;
   model_file_size: number;
   status?: string;
+  test_size?: number;
+  target_column: string;
 }
 
 export interface ModelMetrics {

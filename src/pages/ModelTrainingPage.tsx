@@ -20,7 +20,7 @@ import {
 } from '@ant-design/icons';
 import { ModelParameter } from '../features/models/types';
 import { ModelTrainingRequest, Model } from '../features/models/types';
-
+import { useDownloadModelMutation } from '../features/models/api';
 
 import ReactECharts from 'echarts-for-react';
 import { Descriptions, Tabs } from 'antd';
@@ -40,12 +40,15 @@ type FormValues = {
   test_size?: number;
   model_name?: string;
 };
+
 const ModelTrainingPage = () => {
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [isModelSelected, setIsModelSelected] = useState(false);
   const dispatch = useAppDispatch();
+  const [downloadModel]  = useDownloadModelMutation();
+
   // 在组件内部添加以下状态
   const [trainingResult, setTrainingResult] = useState<Model | null>(null);
   const [useDefaultParams, setUseDefaultParams] = useState(true); // 新增状态：是否使用默认参数
@@ -193,7 +196,23 @@ const ModelTrainingPage = () => {
     };
 
   const prevStep = () => setCurrentStep(currentStep - 1);
-
+  const HandleDownlad = async (record_id: number) => {
+    try { 
+      const result = await downloadModel({record_id: record_id}).unwrap();
+      const url = window.URL.createObjectURL(new Blob([result]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', trainingResult?.model_file_path.split(/[\\\/]/).pop() || 'model.pkl');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) { 
+      console.error('下载失败:', err);
+      message.error('文件下载失败');
+    }  
+    
+  };
     
   const renderTrainingResult = () => {
     if (!trainingResult) return null;
@@ -274,7 +293,22 @@ const ModelTrainingPage = () => {
             <Descriptions.Item label="训练时长">
               {trainingResult.duration.toFixed(2)} 秒
             </Descriptions.Item>
-            <Descriptions.Item label="数据文件">{trainingResult.file_name}</Descriptions.Item>
+            <Descriptions.Item label="模型大小">
+              {trainingResult.model_file_size} k
+            </Descriptions.Item>
+            <Descriptions.Item label="数据文件">
+              <span 
+                style={{ 
+                  color: 'blue', 
+                  textDecoration: 'underline', 
+                  cursor: 'pointer' 
+                }} 
+                onClick={() => HandleDownlad(trainingResult.id)}
+                title="下载模型"
+              >
+                {trainingResult.model_file_path.split(/[\\\/]/).pop() || 'model.pkl'}
+              </span>
+            </Descriptions.Item>
           </Descriptions>
         )
       },

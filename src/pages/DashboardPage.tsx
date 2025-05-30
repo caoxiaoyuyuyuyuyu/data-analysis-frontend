@@ -7,13 +7,13 @@ import {
   DownloadOutlined,
   ClockCircleOutlined
 } from '@ant-design/icons';
-import { useGetFilesQuery, useDownloadFileMutation } from '../features/files/api';
 import { useGetTrainingHistoryQuery } from '../features/history/api';
 import { useAppSelector } from '../store/hooks';
 import dayjs from 'dayjs';
 import React from 'react';
 import { message } from 'antd';
 import { UserFile } from '../types/files';
+import { useGetFilesQuery, useDownloadFileMutation } from '../features/files/api';
 
 const { Title } = Typography;
 

@@ -10,6 +10,8 @@ import { filesApi } from '../features/files/api';
 import { historyApi } from '../features/history/api';
 import { preprocessingApi } from '../features/preprocessing/api';
 import { modelsApi } from '../features/models/api';
+import { predictApi } from '../features/predict/api';
+
 
 
 
@@ -23,6 +25,7 @@ export const store = configureStore({
     [filesApi.reducerPath]: filesApi.reducer,
     [modelsApi.reducerPath]: modelsApi.reducer,
     // [trainingApi.reducerPath]: trainingApi.reducer,
+    [predictApi.reducerPath]: predictApi.reducer,
     [historyApi.reducerPath]: historyApi.reducer,
     [preprocessingApi.reducerPath]: preprocessingApi.reducer,
   },
@@ -31,6 +34,7 @@ export const store = configureStore({
       .concat(authApi.middleware)
       .concat(filesApi.middleware)
       // .concat(trainingApi.middleware)
+      .concat(predictApi.middleware)
       .concat(historyApi.middleware)
       .concat(preprocessingApi.middleware)
       .concat(modelsApi.middleware),

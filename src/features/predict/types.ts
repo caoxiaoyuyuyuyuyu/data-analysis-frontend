@@ -1,16 +1,32 @@
+import { ColumnType } from 'antd/es/table';
 export interface PredictionRequest {
-  model_id: string;
-  file: File;
+  training_record_id: number;
+  input_file_id: number;
 }
 
 export interface PredictionResult {
-  record_id: number;
-  predictions: any[];
-  model_info: {
+  record_id?: number;
+  predict_data: any[];
+  model_info?: {
     id: number;
     name: string;
     type: string;
   };
-  predict_time: string;
-  predict_duration: number;
+  predict_time?: string;
+  predict_duration?: number;
+}
+
+// types/files.ts
+export interface FileCheckResult {
+  valid: boolean;
+  missing_columns?: string[];
+  extra_columns?: string[];
+  expected_columns?: string[];
+  message?: string;
+}
+export interface PredictionTableColumn extends ColumnType<any> {
+  title: string;
+  dataIndex: string;
+  key: string;
+  render?: (value: any, record: any, index: number) => React.ReactNode;
 }

@@ -1,7 +1,7 @@
 // features/predict/api.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { PredictionHistory } from '../history/types';
-import { PredictionResult } from './types';
+
+import { PredictionResult, PredictionRequest, FileCheckResult } from './types';
 
 export const predictApi = createApi({
   reducerPath: 'predictApi',
@@ -17,7 +17,7 @@ export const predictApi = createApi({
   }),
   tagTypes: ['PredictionHistory'],
   endpoints: (builder) => ({
-    predict: builder.mutation<PredictionResult, FormData>({
+    predict: builder.mutation<PredictionResult, PredictionRequest>({
       query: (formData) => ({
         url: '',
         method: 'POST',
@@ -27,9 +27,24 @@ export const predictApi = createApi({
       }),
       invalidatesTags: ['PredictionHistory'],
     }),
+  checkFile: builder.mutation<FileCheckResult, { 
+    file_id: number; 
+    model_id: number 
+  }>({
+    query: (body) => ({
+      url: 'check',
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }),
+  }),
   }),
 });
 
 export const {
-    usePredictMutation
+    usePredictMutation,
+    useCheckFileMutation,
+
 } = predictApi;
