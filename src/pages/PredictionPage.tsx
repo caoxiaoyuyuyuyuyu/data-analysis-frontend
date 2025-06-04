@@ -16,7 +16,8 @@ import {
   Row,
   Col,
   List,
-  Divider
+  Divider,
+  InputNumber,
 } from 'antd';
 import { 
   LoadingOutlined, 
@@ -35,7 +36,14 @@ import { PredictionResult, PredictionTableColumn } from '../features/predict/typ
 import { FileCheckResult } from '../types/files';
 import { format } from 'date-fns';
 import { useNavigate  } from 'react-router-dom';
-
+import {
+  BarChartOutlined,
+  LineChartOutlined,
+  PieChartOutlined,
+  ClusterOutlined
+} from '@ant-design/icons';
+import { ScatterChart, BarChart, PieChart, LineChart } from '@mui/x-charts';
+import { useTheme } from '@mui/material/styles';
 
 
 const { Title, Text } = Typography;
@@ -50,7 +58,208 @@ const PredictionPage = () => {
   const [fileCheckResult, setFileCheckResult] = useState<FileCheckResult | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const navigate = useNavigate();
+  const theme = useTheme();
+  // 新增分箱配置状态
+  const [binConfig, setBinConfig] = useState({
+    strategy: 'equal-width' as 'equal-width' | 'equal-frequency',
+    binCount: 5,
+  });
+  // 分箱数据处理函数
+const getBinnedDistributionData = (predictions: number[], config: typeof binConfig) => {
+  if (config.strategy === 'equal-width') {
+    // 等宽分箱
+    const min = Math.min(...predictions);
+    const max = Math.max(...predictions);
+    const step = (max - min) / config.binCount;
+    
+    return Array.from({ length: config.binCount }).map((_, i) => {
+      const lower = min + i * step;
+      const upper = lower + step;
+      const count = predictions.filter(v => v >= lower && (i === config.binCount - 1 ? v <= upper : v < upper)).length;
+      
+      return {
+        id: `bin_${i}`,
+        value: count,
+        label: `[${lower.toFixed(2)}, ${upper.toFixed(2)})`
+      };
+    });
+  } else {
+    // 等频分箱
+    const sorted = [...predictions].sort((a, b) => a - b);
+    const binSize = Math.ceil(sorted.length / config.binCount);
+    
+    return Array.from({ length: config.binCount }).map((_, i) => {
+      const startIdx = i * binSize;
+      const endIdx = Math.min(startIdx + binSize, sorted.length);
+      const lower = sorted[startIdx];
+      const upper = endIdx < sorted.length ? sorted[endIdx] : sorted[sorted.length - 1];
+      
+      return {
+        id: `bin_${i}`,
+        value: endIdx - startIdx,
+        label: `[${lower.toFixed(2)}, ${upper.toFixed(2)})`
+      };
+    });
+  }
+};
+  // 新增渲染可视化函数
+  const renderVisualizations = () => {
+    if (!predictionResult?.visualization) return null;
+    
+    const { visualization } = predictionResult;
+    
+    return (
+      <Card title="预测可视化分析" style={{ marginTop: 16 }}>
+        <Collapse defaultActiveKey={['feature_importance']}>
+          {/* 特征重要性图表 */}
+          {visualization.feature_importance && (
+            <Panel 
+              header={
+                <Space>
+                  <BarChartOutlined />
+                  <span>特征重要性</span>
+                </Space>
+              } 
+              key="feature_importance"
+            >
+              <div style={{ height: 400 }}>
+                <BarChart
+                  xAxis={[{
+                    scaleType: 'band',
+                    data: visualization.feature_importance.features,
+                    label: '特征',
+                  }]}
+                  series={[{
+                    data: visualization.feature_importance.importance,
+                    label: '重要性',
+                    color: theme.palette.primary.main
+                  }]}
+                  margin={{ left: 100 }}
+                />
+              </div>
+            </Panel>
+          )}
+          
+          {/* 预测结果分布 */}
+          {visualization.distribution && (
+            <Panel 
+              header={
+                <Space>
+                  <PieChartOutlined />
+                  <span>预测结果分布</span>
+                </Space>
+              } 
+              key="distribution"
+            >
+              {/* 新增分箱控制面板 */}
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Space>
+                  <span>分箱策略：</span>
+                  <Select
+                    value={binConfig.strategy}
+                    onChange={(value) => setBinConfig({...binConfig, strategy: value})}
+                    style={{ width: 120 }}
+                  >
+                    <Option value="equal-width">等宽分箱</Option>
+                    <Option value="equal-frequency">等频分箱</Option>
+                  </Select>
+                  
+                  <span>分箱数量：</span>
+                  <InputNumber 
+                    min={3} 
+                    max={15} 
+                    value={binConfig.binCount}
+                    onChange={(value) => setBinConfig({...binConfig, binCount: value || 5})}
+                  />
+                </Space>
+              </Card>
 
+              {/* 修改后的饼图 */}
+              <div style={{ height: 400 }}>
+                <PieChart
+                  series={[{
+                    data: getBinnedDistributionData(
+                      predictionResult.predict_data.map(d => d.prediction),
+                      binConfig
+                    ),
+                    innerRadius: 30,
+                    outerRadius: 100,
+                  }]}
+                  width={400}
+                  height={400}
+                />
+              </div>
+            </Panel>
+          )}
+          
+          {/* 聚类可视化 */}
+          {visualization.cluster_visualization && (
+            <Panel 
+              header={
+                <Space>
+                  <ClusterOutlined />
+                  <span>聚类可视化</span>
+                </Space>
+              } 
+              key="cluster_visualization"
+            >
+              <div style={{ height: 500 }}>
+                <ScatterChart
+                  xAxis={[{ label: 'PC1' }]}
+                  yAxis={[{ label: 'PC2' }]}
+                  series={[
+                    {
+                      data: visualization.cluster_visualization.x.map((x, i) => ({
+                        x,
+                        y: visualization.cluster_visualization?.y[i] || 0, // 提供默认值
+                        id: i,
+                        cluster: visualization.cluster_visualization?.labels[i] || 0
+                      })),
+                      label: '数据点',
+                      valueFormatter: (params) => `点 ${params?.id}`
+                    }
+                  ]}
+                  width={600}
+                  height={500}
+                />
+              </div>
+            </Panel>
+          )}
+          
+          {/* 回归模型预测 vs 实际值 */}
+          {visualization.model_type === 'regression' && visualization.distribution?.actual && (
+            <Panel 
+              header={
+                <Space>
+                  <LineChartOutlined />
+                  <span>预测 vs 实际值</span>
+                </Space>
+              } 
+              key="regression_comparison"
+            >
+              <div style={{ height: 400 }}>
+                <LineChart
+                  xAxis={[{ data: Object.keys(visualization.distribution.actual), scaleType: 'point' }]}
+                  series={[
+                    {
+                      data: Object.values(visualization.distribution.actual),
+                      label: '实际值',
+                      color: theme.palette.success.main
+                    },
+                    {
+                      data: Object.values(visualization.distribution.predicted),
+                      label: '预测值',
+                      color: theme.palette.primary.main
+                    }
+                  ]}
+                />
+              </div>
+            </Panel>
+          )}
+        </Collapse>
+      </Card>
+    );
+  };
   
   // 获取用户训练过的模型列表
   const { data: models = [], isLoading: isLoadingModels } = useGetTrainingHistoryQuery();
@@ -542,6 +751,7 @@ const PredictionPage = () => {
       
       {renderFileCheckResult()}
       {renderPredictionResult()}
+      {renderVisualizations()}
     </div>
   );
 };
