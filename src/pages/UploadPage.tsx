@@ -168,6 +168,13 @@ const UploadPage = () => {
               {expandedRowKeys.includes(record.id) ? '收起' : '展开'}
             </Button>
           )}
+           <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => navigate(`/preprocessing/${record.id}`)}
+          >
+            数据预处理
+          </Button>
         </Space>
       ),
     },

@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, Tabs, Button, message } from 'antd';
 import { useGetFileByIdQuery } from '../features/files/api';
-import { usePreprocessFileMutation } from '../features/preprocessing/api';
+import { usePreprocessFileMutation, useGetFileDataQuery } from '../features/preprocessing/api';
 import DataPreviewTable from '../components/DataPreviewTable';
 import MissingValuesPanel from '../components/MissingValuesPanel';
 import FeatureScalingPanel from '../components/FeatureScalingPanel';
 import EncodingPanel from '../components/EncodingPanel';
+import PCAPanel from '../components/PCAPanel';
+import OutlierHandlingPanel from '../components/OutlierHandlingPanel';
+import FeatureSelectionPanel from '../components/FeatureSelectionPanel';
 import { useAppDispatch } from '../store/hooks';
-import { set } from 'date-fns';
+import { StepType } from '../features/preprocessing/api';
 
 const PreprocessingPage = () => {
   const orignalFileId = useParams<{ fileId: string }>().fileId;
@@ -33,14 +36,15 @@ const PreprocessingPage = () => {
     }
     console.log('file', file);
   }, [file, dispatch]);
-  const handleApply = async (step: { 
-    type: 'missing_values' | 'feature_scaling' | 'encoding'; 
-    params: any 
+
+  const handleApply = async (step: {
+    type: StepType;
+    params: any
   }) => {
     try {
       const response = await preprocessFile({
         fileId: Number(fileId),
-        step,  // 将 step 作为单独的对象传递
+        step,
         processed_record_id: processedRecordId
       }).unwrap();
       message.success(`${step.type} 处理已应用`);
@@ -52,6 +56,9 @@ const PreprocessingPage = () => {
     }
   };
 
+  const { data: fileData } = useGetFileDataQuery(Number(fileId));
+  const columns = fileData?.preview?.columns || [];
+
   const tabs = [
     {
       key: 'preview',
@@ -59,14 +66,28 @@ const PreprocessingPage = () => {
       children: <DataPreviewTable fileId={Number(fileId)} />,
     },
     {
+      key: 'feature-selection',
+      label: '选择特征列',
+      children: (
+        <FeatureSelectionPanel
+          fileId={Number(fileId)}
+          onApply={(params) => handleApply({
+            type: 'feature_selection',
+            params
+          })}
+          columns={columns}
+        />
+      ),
+    },
+    {
       key: 'missing',
       label: '缺失值处理',
       children: (
-        <MissingValuesPanel 
+        <MissingValuesPanel
           fileId={Number(fileId)}
-          onApply={(params) => handleApply({ 
-            type: 'missing_values', 
-            params 
+          onApply={(params) => handleApply({
+            type: 'missing_values',
+            params
           })}
         />
       ),
@@ -77,9 +98,9 @@ const PreprocessingPage = () => {
       children: (
         <FeatureScalingPanel
           fileId={Number(fileId)}
-          onApply={(params) => handleApply({ 
-            type: 'feature_scaling', 
-            params 
+          onApply={(params) => handleApply({
+            type: 'feature_scaling',
+            params
           })}
         />
       ),
@@ -90,13 +111,40 @@ const PreprocessingPage = () => {
       children: (
         <EncodingPanel
           fileId={Number(fileId)}
-          onApply={(params) => handleApply({ 
-            type: 'encoding', 
-            params 
+          onApply={(params) => handleApply({
+            type: 'encoding',
+            params
           })}
         />
       ),
     },
+    {
+      key: 'pca',
+      label: '主成分分析（PCA）',
+      children: (
+        <PCAPanel
+          fileId={Number(fileId)}
+          onApply={(params) => handleApply({
+            type: 'pca',
+            params
+          })}
+        />
+      ),
+    },
+    {
+      key: 'outlier',
+      label: '异常值处理',
+      children: (
+        <OutlierHandlingPanel
+          fileId={Number(fileId)}
+          onApply={(params) => handleApply({
+            type: 'outlier_handling',
+            params
+          })}
+        />
+      ),
+    },
+
   ];
 
   return (

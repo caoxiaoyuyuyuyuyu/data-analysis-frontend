@@ -18,6 +18,7 @@ import {
 } from 'antd';
 import { useGetFileDataQuery } from '../features/preprocessing/api';
 import { FileDataResponse } from '../features/preprocessing/api';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LabelList } from 'recharts';
 
 const { Text } = Typography;
 
@@ -53,7 +54,7 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
       setError(null);
       setIsProcessing(true);
       const values = await form.validateFields();
-      
+
       const finalParams = {
         ...values,
         columns: values.columns || columns
@@ -68,7 +69,7 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
   };
 
   // 准备表格数据
-  const tableData: MissingValueStats[] = stats?.missing_values 
+  const tableData: MissingValueStats[] = stats?.missing_values
     ? Object.entries(stats.missing_values).map(([column, missing_count]) => ({
         column,
         missing_count,
@@ -114,32 +115,32 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
           {percentage}
         </Text>
       ),
-      sorter: (a: MissingValueStats, b: MissingValueStats) => 
+      sorter: (a: MissingValueStats, b: MissingValueStats) =>
         parseFloat(a.missing_percentage) - parseFloat(b.missing_percentage)
     }
   ];
 
   if (isLoading) return <Spin tip="加载数据..." />;
-  
+
   if (queryError) {
     const errMsg = (queryError as any)?.data?.error || '加载数据失败';
     return <Alert message={errMsg} type="error" />;
   }
 
   return (
-    <Card 
-      title="缺失值处理" 
+    <Card
+      title="缺失值处理"
       bordered={false}
       headStyle={{ borderBottom: '1px solid #f0f0f0' }}
     >
       <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
         当前文件ID: {fileId} | 总行数: {data?.metadata.rows || 0}
       </Text>
-      
+
       {error && (
-        <Alert 
-          message={error} 
-          type="error" 
+        <Alert
+          message={error}
+          type="error"
           showIcon
           style={{ marginBottom: 16 }}
         />
@@ -187,7 +188,7 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
         >
           {() => {
             const strategy = form.getFieldValue('strategy');
-            
+
             return strategy === 'constant' ? (
               <Form.Item
                 name="fill_value"
@@ -195,14 +196,14 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
                 rules={[{ required: true, message: '请输入填充值' }]}
                 validateFirst
               >
-                <InputNumber 
+                <InputNumber
                   style={{ width: 200 }}
                   placeholder="输入数值或字符串"
                 />
               </Form.Item>
             ) : strategy === 'drop' ? (
-              <Alert 
-                message="注意：这将永久删除包含缺失值的行" 
+              <Alert
+                message="注意：这将永久删除包含缺失值的行"
                 type="warning"
                 showIcon
               />
@@ -211,7 +212,7 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
         </Form.Item>
 
         <Divider />
-        
+
         <Form.Item>
           <Space>
             <Button
@@ -222,7 +223,7 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
             >
               {isProcessing ? '处理中...' : '应用处理'}
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 form.resetFields();
                 setError(null);
@@ -233,10 +234,10 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
           </Space>
         </Form.Item>
       </Form>
-      
+
       {/* 缺失值统计表格 */}
-      <Card 
-        title="缺失值统计" 
+      <Card
+        title="缺失值统计"
         style={{ marginTop: 24 }}
         extra={<Text>总缺失值: {tableData.reduce((sum, item) => sum + item.missing_count, 0)}</Text>}
       >
@@ -267,8 +268,8 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
                   <Table.Summary.Cell index={2}>
                     <Text type="danger">
                       {(
-                        (tableData.reduce((sum, item) => sum + item.missing_count, 0) / 
-                        (data?.metadata.rows || 1) / 
+                        (tableData.reduce((sum, item) => sum + item.missing_count, 0) /
+                        (data?.metadata.rows || 1) /
                         tableData.length) * 100
                       ).toFixed(2)}%
                     </Text>
@@ -279,6 +280,23 @@ const MissingValuesPanel = ({ fileId, onApply }: MissingValuesPanelProps) => {
           )}
         />
       </Card>
+
+      {/* 缺失值可视化 */}
+      {tableData.length > 0 && (
+        <Card title="缺失值可视图" style={{ marginTop: 24 }}>
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={sortedTableData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="column" tick={{ fill: '#333', fontSize: 14 }} />
+              <YAxis tick={{ fill: '#333', fontSize: 14 }} />
+              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: 4 }} />
+              <Bar dataKey="missing_count" fill="#FF6B6B" stroke="#FF6B6B" strokeWidth={2}>
+                <LabelList dataKey="missing_count" position="top" fill="#333" />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
     </Card>
   );
 };
