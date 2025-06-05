@@ -5,11 +5,10 @@ import {
 } from '../features/history/api';
 import { useState } from 'react';
 import { PredictionHistory } from '../features/history/types';
-import { JSONTree } from 'react-json-tree';
 import { format } from 'date-fns';
 import { Key } from 'react';
-
 const { TabPane } = Tabs;
+import renderInputData from '../components/renderInputData';
 
 const PredictionsPage = () => {
   const { data: predictions, isLoading, refetch } = useGetPredictionHistoryQuery();
@@ -40,29 +39,6 @@ const PredictionsPage = () => {
   const showDeleteConfirm = (predictionId: number) => {
     setPredictionToDelete(predictionId);
     setDeleteConfirmVisible(true);
-  };
-
-  const renderInputData = (data: any) => {
-    if (!data) return <span>无输入数据</span>;
-
-    return (
-      <JSONTree
-        data={data}
-        hideRoot={true}
-        shouldExpandNodeInitially={() => false}
-        theme={{
-          nestedNodeChildren: {
-            marginLeft: '20px',
-          },
-          valueLabel: {
-            color: '#333',
-          },
-          valueText: {
-            color: '#999',
-          },
-        }}
-      />
-    );
   };
 
   const renderOutputData = (filePath: string | null) => {
@@ -203,7 +179,7 @@ const PredictionsPage = () => {
               </Descriptions>
             </TabPane>
             
-            <TabPane tab="参数" key="2">
+            <TabPane tab="指标" key="2">
               {renderInputData(selectedPrediction.parameters)}
             </TabPane>
             

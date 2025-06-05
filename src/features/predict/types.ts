@@ -6,6 +6,8 @@ export interface PredictionRequest {
 export interface VisualizationData {
   model_type: 'classification' | 'regression' | 'clustering';
   class_labels?: string[];
+  basic_metrics: {
+  } | null;
   feature_importance?: {
     features: string[];
     importance: number[];
@@ -32,7 +34,7 @@ export interface PredictionResult {
   };
   predict_time?: string;
   predict_duration?: number;
-  visualization?: VisualizationData;
+  visualization: VisualizationData;
 }
 
 // types/files.ts

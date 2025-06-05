@@ -65,44 +65,60 @@ const PredictionPage = () => {
     binCount: 5,
   });
   // 分箱数据处理函数
-const getBinnedDistributionData = (predictions: number[], config: typeof binConfig) => {
-  if (config.strategy === 'equal-width') {
-    // 等宽分箱
-    const min = Math.min(...predictions);
-    const max = Math.max(...predictions);
-    const step = (max - min) / config.binCount;
-    
-    return Array.from({ length: config.binCount }).map((_, i) => {
-      const lower = min + i * step;
-      const upper = lower + step;
-      const count = predictions.filter(v => v >= lower && (i === config.binCount - 1 ? v <= upper : v < upper)).length;
+  const getBinnedDistributionData = (predictions: any[], config: typeof binConfig) => {
+    // 如果是分类问题，直接统计类别分布
+    if (predictionResult?.visualization?.model_type === 'classification') {
+      const classCounts: Record<string, number> = {};
       
-      return {
-        id: `bin_${i}`,
+      predictions.forEach(pred => {
+        const label = String(pred); // 确保转换为字符串
+        classCounts[label] = (classCounts[label] || 0) + 1;
+      });
+      
+      return Object.entries(classCounts).map(([label, count], i) => ({
+        id: `class_${i}`,
         value: count,
-        label: `[${lower.toFixed(2)}, ${upper.toFixed(2)})`
-      };
-    });
-  } else {
-    // 等频分箱
-    const sorted = [...predictions].sort((a, b) => a - b);
-    const binSize = Math.ceil(sorted.length / config.binCount);
+        label: label
+      }));
+    }
     
-    return Array.from({ length: config.binCount }).map((_, i) => {
-      const startIdx = i * binSize;
-      const endIdx = Math.min(startIdx + binSize, sorted.length);
-      const lower = sorted[startIdx];
-      const upper = endIdx < sorted.length ? sorted[endIdx] : sorted[sorted.length - 1];
+    // 以下是原有的回归处理逻辑
+    if (config.strategy === 'equal-width') {
+      const min = Math.min(...predictions);
+      const max = Math.max(...predictions);
+      const step = (max - min) / config.binCount;
       
-      return {
-        id: `bin_${i}`,
-        value: endIdx - startIdx,
-        label: `[${lower.toFixed(2)}, ${upper.toFixed(2)})`
-      };
-    });
-  }
-};
+      return Array.from({ length: config.binCount }).map((_, i) => {
+        const lower = min + i * step;
+        const upper = lower + step;
+        const count = predictions.filter(v => v >= lower && (i === config.binCount - 1 ? v <= upper : v < upper)).length;
+        
+        return {
+          id: `bin_${i}`,
+          value: count,
+          label: `[${lower.toFixed(2)}, ${upper.toFixed(2)})`
+        };
+      });
+    } else {
+      const sorted = [...predictions].sort((a, b) => a - b);
+      const binSize = Math.ceil(sorted.length / config.binCount);
+      
+      return Array.from({ length: config.binCount }).map((_, i) => {
+        const startIdx = i * binSize;
+        const endIdx = Math.min(startIdx + binSize, sorted.length);
+        const lower = sorted[startIdx];
+        const upper = endIdx < sorted.length ? sorted[endIdx] : sorted[sorted.length - 1];
+        
+        return {
+          id: `bin_${i}`,
+          value: endIdx - startIdx,
+          label: `[${lower.toFixed(2)}, ${upper.toFixed(2)})`
+        };
+      });
+    }
+  };
   // 新增渲染可视化函数
+  
   const renderVisualizations = () => {
     if (!predictionResult?.visualization) return null;
     
@@ -110,7 +126,52 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
     
     return (
       <Card title="预测可视化分析" style={{ marginTop: 16 }}>
-        <Collapse defaultActiveKey={['feature_importance']}>
+        <Collapse defaultActiveKey={['classification_metrics']}>
+        {/* 1. 分类指标面板 */}
+        {visualization.basic_metrics && (
+          <Panel 
+            header={
+              <Space>
+                <BarChartOutlined />
+                <span>分类指标</span>
+                <Tag color="blue">模型评估</Tag>
+              </Space>
+            } 
+            key="classification_metrics"
+          >
+            <Row gutter={16}>
+              {Object.entries(visualization.basic_metrics).map(([key, value]) => (
+                <Col span={6} key={key}>
+                  <Card size="small">
+                    <Statistic
+                      title={key.charAt(0).toUpperCase() + key.slice(1)}
+                      value={value as number}
+                      precision={4}
+                      // 添加 valueStyle 调整数字样式
+                      valueStyle={{ 
+                        fontSize: 14,        // 调小字号
+                        fontWeight: 500,     // 适当降低字重
+                        color: '#2f54eb'     // 调整颜色增强对比
+                      }}
+                      formatter={val => typeof val === 'number' ? val.toFixed(4) : String(val)}
+                    />
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+            {visualization.class_labels && (
+              <div style={{ marginTop: 16 }}>
+                <Text strong>类别标签: </Text>
+                {visualization.class_labels.map(label => (
+                  <Tag key={label} color="geekblue" style={{ marginRight: 8 }}>
+                    {label}
+                  </Tag>
+                ))}
+              </div>
+            )}
+          </Panel>
+        )}
+
           {/* 特征重要性图表 */}
           {visualization.feature_importance && (
             <Panel 
@@ -151,30 +212,31 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
               } 
               key="distribution"
             >
-              {/* 新增分箱控制面板 */}
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <Space>
-                  <span>分箱策略：</span>
-                  <Select
-                    value={binConfig.strategy}
-                    onChange={(value) => setBinConfig({...binConfig, strategy: value})}
-                    style={{ width: 120 }}
-                  >
-                    <Option value="equal-width">等宽分箱</Option>
-                    <Option value="equal-frequency">等频分箱</Option>
-                  </Select>
-                  
-                  <span>分箱数量：</span>
-                  <InputNumber 
-                    min={3} 
-                    max={15} 
-                    value={binConfig.binCount}
-                    onChange={(value) => setBinConfig({...binConfig, binCount: value || 5})}
-                  />
-                </Space>
-              </Card>
+              {/* 只在回归问题时显示分箱控制面板 */}
+              {visualization.model_type !== 'classification' && (
+                <Card size="small" style={{ marginBottom: 16 }}>
+                  <Space>
+                    <span>分箱策略：</span>
+                    <Select
+                      value={binConfig.strategy}
+                      onChange={(value) => setBinConfig({...binConfig, strategy: value})}
+                      style={{ width: 120 }}
+                    >
+                      <Option value="equal-width">等宽分箱</Option>
+                      <Option value="equal-frequency">等频分箱</Option>
+                    </Select>
+                    
+                    <span>分箱数量：</span>
+                    <InputNumber 
+                      min={3} 
+                      max={15} 
+                      value={binConfig.binCount}
+                      onChange={(value) => setBinConfig({...binConfig, binCount: value || 5})}
+                    />
+                  </Space>
+                </Card>
+              )}
 
-              {/* 修改后的饼图 */}
               <div style={{ height: 400 }}>
                 <PieChart
                   series={[{
@@ -211,7 +273,7 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
                     {
                       data: visualization.cluster_visualization.x.map((x, i) => ({
                         x,
-                        y: visualization.cluster_visualization?.y[i] || 0, // 提供默认值
+                        y: visualization.cluster_visualization?.y[i] || 0,
                         id: i,
                         cluster: visualization.cluster_visualization?.labels[i] || 0
                       })),
@@ -336,6 +398,12 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
               title="训练耗时" 
               value={currentModel.duration} 
               precision={2}
+              // 添加 valueStyle 调整数字样式
+              valueStyle={{ 
+                fontSize: 14,        // 调小字号
+                fontWeight: 500,     // 适当降低字重
+                color: '#2f54eb'     // 调整颜色增强对比
+              }}
               suffix="秒"
               prefix={<ClockCircleOutlined />}
             />
@@ -344,6 +412,12 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
             <Statistic 
               title="模型大小" 
               value={(currentModel.model_file_size / 1024).toFixed(2)} 
+              // 添加 valueStyle 调整数字样式
+              valueStyle={{ 
+                fontSize: 14,        // 调小字号
+                fontWeight: 500,     // 适当降低字重
+                color: '#2f54eb'     // 调整颜色增强对比
+              }}
               suffix="KB"
               prefix={<FileOutlined />}
             />
@@ -352,6 +426,12 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
             <Statistic 
               title="测试集比例" 
               value={(currentModel.test_size || 0) * 100} 
+              // 添加 valueStyle 调整数字样式
+              valueStyle={{ 
+                fontSize: 14,        // 调小字号
+                fontWeight: 500,     // 适当降低字重
+                color: '#2f54eb'     // 调整颜色增强对比
+              }}
               suffix="%"
               prefix={<ExperimentOutlined />}
             />
@@ -369,6 +449,12 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
                     <Card size="small">
                       <Statistic
                         title={key.toUpperCase()}
+                        // 添加 valueStyle 调整数字样式
+                        valueStyle={{ 
+                          fontSize: 14,        // 调小字号
+                          fontWeight: 500,     // 适当降低字重
+                          color: '#2f54eb'     // 调整颜色增强对比
+                        }}
                         value={typeof value === 'number' ? value.toFixed(4) : value}
                       />
                     </Card>
@@ -389,19 +475,21 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
               </Descriptions>
             </Panel>
           )}
+            <Panel header="训练信息" key="infomation">
+              <Descriptions bordered column={2} style={{ marginTop: 16 }}>
+                <Descriptions.Item label="创建时间">
+                  {format(new Date(currentModel.created_at), 'yyyy-MM-dd HH:mm:ss')}
+                </Descriptions.Item>
+                <Descriptions.Item label="更新时间">
+                  {format(new Date(currentModel.updated_at), 'yyyy-MM-dd HH:mm:ss')}
+                </Descriptions.Item>
+                <Descriptions.Item label="目标列">
+                  <Tag color="purple">{currentModel.target_column}</Tag>
+                </Descriptions.Item>
+              </Descriptions>
+            </Panel>
         </Collapse>
 
-        <Descriptions bordered column={2} style={{ marginTop: 16 }}>
-          <Descriptions.Item label="创建时间">
-            {format(new Date(currentModel.created_at), 'yyyy-MM-dd HH:mm:ss')}
-          </Descriptions.Item>
-          <Descriptions.Item label="更新时间">
-            {format(new Date(currentModel.updated_at), 'yyyy-MM-dd HH:mm:ss')}
-          </Descriptions.Item>
-          <Descriptions.Item label="目标列">
-            <Tag color="purple">{currentModel.target_column}</Tag>
-          </Descriptions.Item>
-        </Descriptions>
       </Card>
     );
   };
@@ -628,9 +716,9 @@ const getBinnedDistributionData = (predictions: number[], config: typeof binConf
       title: '预测结果',
       dataIndex: 'prediction',
       key: 'prediction',
-      render: (value: number) => (
+      render: (value) => (
         <Text strong style={{ color: '#1890ff' }}>
-          {value?.toFixed(6)}
+            {typeof value === 'number' ? value.toFixed(6) : String(value)}
         </Text>
       ),
     },
