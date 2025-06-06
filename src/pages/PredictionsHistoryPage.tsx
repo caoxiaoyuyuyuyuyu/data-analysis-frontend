@@ -110,14 +110,14 @@ const PredictionsPage = () => {
       render: (_: any, record: PredictionHistory) => (
         <Space size="middle">
           <Button type="link" onClick={() => showDetail(record)}>详情</Button>
-          <Button 
+          {/* <Button 
             type="link" 
             danger 
             onClick={() => showDeleteConfirm(record.id)}
             disabled={record.status === 'processing'}
           >
             删除
-          </Button>
+          </Button> */}
         </Space>
       )
     }

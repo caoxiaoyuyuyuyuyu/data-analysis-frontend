@@ -49,6 +49,8 @@ const ModelTrainingPage = () => {
   const dispatch = useAppDispatch();
   const [downloadModel]  = useDownloadModelMutation();
 
+  // 新增状态：目标列的数据类型
+  const [targetColumnType, setTargetColumnType] = useState<string | null>(null);
   // 在组件内部添加以下状态
   const [trainingResult, setTrainingResult] = useState<Model | null>(null);
   const [useDefaultParams, setUseDefaultParams] = useState(true); // 新增状态：是否使用默认参数
@@ -71,6 +73,26 @@ const ModelTrainingPage = () => {
   // 获取文件的列名
   const columns = fileData?.preview?.columns || [];
   
+  // 文件变化时重置目标列和类型
+  useEffect(() => {
+    if (selectedFileId) {
+      form.setFieldsValue({ target_column: undefined });
+      setTargetColumnType(null);
+    }
+  }, [selectedFileId]);
+
+  // 根据目标列类型过滤模型配置
+  const filteredModelConfigs = targetColumnType
+    ? modelConfigs.filter(config => {
+        // 数值型目标列 - 显示回归和聚类模型
+        if (/float|int|double|long|short|byte/i.test(targetColumnType)) {
+          return config.category === 'regression' || config.category === 'clustering';
+        }
+        // 分类型目标列 - 显示分类和聚类模型
+        return config.category === 'classification' || config.category === 'clustering';
+      })
+    : modelConfigs;
+
   // 动态渲染参数输入控件
   const renderParameterInput = (param: ModelParameter) => {
     const commonProps = {
@@ -437,6 +459,11 @@ const ModelTrainingPage = () => {
                   placeholder="选择目标列"
                   loading={isFileDataLoading}
                   disabled={!selectedFileId}
+                  onChange={(value) => {
+                    // 获取目标列的数据类型
+                    const dtype = fileData?.statistics?.dtypes?.[value] || null;
+                    setTargetColumnType(dtype);
+                  }}
                 >
                   {columns.map(col => (
                     <Option key={col} value={col}>
@@ -495,7 +522,18 @@ const ModelTrainingPage = () => {
                     console.log('parameters', form.getFieldValue('model_config').parameters)
                   }}
                 >
-                  {modelConfigs.map(config => (
+                  {/* {modelConfigs.map(config => (
+                    <Option key={config.model_id} value={config.model_id}>
+                      <Space>
+                        <span>{config.display_name}</span>
+                        <Tag color={config.category === 'classification' ? 'blue' : (config.category === 'clustering' ? 'pink' : 'orange')}>
+                          {config.category === 'classification' ? '分类' : config.category === 'clustering' ? '聚类' : '回归'}
+                        </Tag>
+                      </Space>
+                    </Option>
+                  ))} */}
+                  {/* 使用过滤后的模型配置列表 */}
+                  {filteredModelConfigs.map(config => (
                     <Option key={config.model_id} value={config.model_id}>
                       <Space>
                         <span>{config.display_name}</span>
@@ -508,6 +546,15 @@ const ModelTrainingPage = () => {
                 </Select>
               </Form.Item>
 
+              {/* 显示类型提示信息 */}
+              {targetColumnType && (
+                <Alert 
+                  message={`目标列 "${form.getFieldValue('target_column')}" 是 ${/float|int|double|long|short|byte/i.test(targetColumnType) ? '数值型' : '分类型'} 数据`}
+                  type="info"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                />
+              )}
               <Form.Item
                 name="model_name"
                 label="模型名称"

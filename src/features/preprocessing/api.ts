@@ -24,10 +24,12 @@ export interface PreprocessingResponse {
   processed_file_id:  number
 }
 
+// 导出 StepType 类型
+export type StepType = 'missing_values' | 'feature_scaling' | 'encoding' | 'pca' | 'outlier_handling' | 'feature_selection';
 
 export const preprocessingApi = createApi({
   reducerPath: 'preprocessingApi',
-  baseQuery: fetchBaseQuery({ 
+  baseQuery: fetchBaseQuery({
     baseUrl: '/api/preprocessing',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
@@ -49,10 +51,10 @@ export const preprocessingApi = createApi({
         return response;
       },
     }),
-    preprocessFile: builder.mutation<PreprocessingResponse, { 
+    preprocessFile: builder.mutation<PreprocessingResponse, {
       fileId: number;
       step: {
-        type: 'missing_values' | 'feature_scaling' | 'encoding';
+        type: StepType; // 使用更新后的类型
         params: any;
       };
       processed_record_id: number |  null;
@@ -70,12 +72,10 @@ export const preprocessingApi = createApi({
         return response;
       },
     }),
-
-
   }),
 });
 
-export const { 
+export const {
   useGetFileDataQuery,
   usePreprocessFileMutation,
 } = preprocessingApi;

@@ -39,7 +39,7 @@ const FeatureScalingPanel = ({ fileId, onApply }: FeatureScalingPanelProps) => {
       const values = await form.validateFields();
       await onApply({
         type: 'feature_scaling',
-        params: values,
+        ...values,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : '处理失败');

@@ -118,7 +118,7 @@ const PreprocessingHistoryPage = () => {
           >
             详情
           </Button>
-          <Popconfirm
+          {/* <Popconfirm
             title="确定要删除此记录吗？"
             onConfirm={() => handleDelete(record.id)}
           >
@@ -130,7 +130,7 @@ const PreprocessingHistoryPage = () => {
             onClick={() => handleDownload(record.processed_file.file_name)}
           >
             下载
-          </Button>
+          </Button> */}
         </Space>
       )
     }

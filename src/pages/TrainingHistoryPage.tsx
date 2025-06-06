@@ -165,14 +165,14 @@ const HistoryPage = () => {
       render: (_: any, record: Model) => (
         <Space size="middle">
           <Button type="link" onClick={() => showDetail(record)}>详情</Button>
-          <Button type="link" onClick={() => handleRetrain(record.id)}>重新训练</Button>
-          <Button 
+          {/* <Button type="link" onClick={() => handleRetrain(record.id)}>重新训练</Button> */}
+          {/* <Button 
             type="link" 
             danger 
             onClick={() => showDeleteConfirm(record.id)}
           >
             删除
-          </Button>
+          </Button> */}
         </Space>
       )
     }
