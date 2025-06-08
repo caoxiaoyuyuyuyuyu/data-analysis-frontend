@@ -3,10 +3,10 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 import { PredictionResult, PredictionRequest, FileCheckResult } from './types';
 
-export const predictApi = createApi({
-  reducerPath: 'predictApi',
+export const stackingpredictApi = createApi({
+  reducerPath: 'stackingpredictApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: '/api/predict',
+    baseUrl: '/api/stacking',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
       if (token) {
@@ -19,7 +19,7 @@ export const predictApi = createApi({
   endpoints: (builder) => ({
     predict: builder.mutation<PredictionResult, PredictionRequest>({
       query: (formData) => ({
-        url: '',
+        url: '/predict',
         method: 'POST',
         body: formData,
         // 注意：对于文件上传，不需要设置Content-Type头
@@ -32,7 +32,7 @@ export const predictApi = createApi({
     model_id: number 
   }>({
     query: (body) => ({
-      url: 'check',
+      url: '/check',
       method: 'POST',
       body: JSON.stringify(body),
       headers: {
@@ -47,4 +47,4 @@ export const {
     usePredictMutation,
     useCheckFileMutation,
 
-} = predictApi;
+} = stackingpredictApi;

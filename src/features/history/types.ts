@@ -42,3 +42,20 @@ export interface PredictionHistory {
   user_id: number;
   error_message: string | null;
 }
+
+export interface StackingTrainingRecord {
+  id: number;
+  input_file_id: number;
+  task_type: string;
+  base_model_names: string[];
+  meta_model_name: string;
+  cross_validation: number;
+  target: string;
+  model_id: string;
+  model_path: string;
+  start_time: string;
+  end_time: string;
+  metrics: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}

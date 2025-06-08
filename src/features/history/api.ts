@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { PreprocessingHistory, PredictionHistory } from './types';
+import { PreprocessingHistory, PredictionHistory, StackingTrainingRecord } from './types';
 import { Model } from '../models/types';
 
 
@@ -101,6 +101,50 @@ export const historyApi = createApi({
       }),
       invalidatesTags: ['PredictionHistory'],
     }),
+
+    // 新增：获取 stacking 训练记录并转换为 Model 类型
+    getStackingTrainingHistory: builder.query<Model[], void>({
+      query: () => 'stackingtraining', // 后端路径
+      providesTags: (result = []) =>
+        result.map(({ id }) => ({ type: 'Model', id })) as any,
+      transformResponse: (response: StackingTrainingRecord[]) => {
+        return response.map((record: StackingTrainingRecord): Model => ({
+          id: record.id,
+          file_id: record.input_file_id,
+          file_name: `Stacking_${record.id}`, // 可根据实际文件名动态生成
+          model_type: 'Stacking',
+          model_name: record.meta_model_name,
+          duration: Math.round(
+            (new Date(record.end_time).getTime() - new Date(record.start_time).getTime()) / 1000
+          ),
+          metrics: {
+            accuracy: record.metrics.accuracy || 0,
+            precision: record.metrics.precision || 0,
+            recall: record.metrics.recall || 0,
+            f1_score: record.metrics.f1_score || 0,
+          },
+          learning_curve: {
+            train_sizes: [],
+            train_scores: [],
+            test_scores: [],
+          },
+          model_parameters: {
+            base_models: record.base_model_names,
+            meta_model: record.meta_model_name,
+            cross_validation: record.cross_validation,
+            target: record.target,
+          },
+          created_at: new Date(record.created_at).toLocaleString(),
+          updated_at: new Date(record.updated_at).toLocaleString(),
+          model_file_path: record.model_path,
+          model_file_size: 0, // 如果没有具体大小信息，可以设为 0 或从其他字段提取
+          status: 'completed',
+          test_size: undefined,
+          target_column: record.target,
+        }));
+      },
+    })
+
   }),
 });
 
@@ -115,4 +159,6 @@ export const {
   useGetPredictionHistoryQuery,
   useGetPredictionRecordQuery,
   useDeletePredictionRecordMutation,
+
+  useGetStackingTrainingHistoryQuery
 } = historyApi;

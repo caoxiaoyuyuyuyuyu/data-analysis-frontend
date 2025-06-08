@@ -67,7 +67,7 @@ const StackingTrainingPage = () => {
       await form.validateFields(['input_file_id', 'target', 'meta_model_name']);
       
       // 获取表单值
-      const values = form.getFieldsValue();
+      const values = form.getFieldsValue(true);
       
       // 构建训练请求
       const requestData: FormValues = {
@@ -75,7 +75,7 @@ const StackingTrainingPage = () => {
         target: values.target,
         base_model_name: values.base_model_name,
         meta_model_name: values.meta_model_name,
-        task_type: values.task_type,
+        task_type: values.taskType,
         cross_validation: values.cross_validation,
         model_name: values.model_name || `stacking_${Date.now()}`
       };
