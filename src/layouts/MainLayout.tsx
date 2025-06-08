@@ -137,6 +137,26 @@ const MainLayout = () => {
       icon: <LineChartOutlined />,
       label: <Link to="/predictions">数据预测</Link>,
     },
+
+    {
+      key: 'stacking',
+      icon: <HistoryOutlined />,
+      label: "模型融合",
+      children: [
+        {
+          key: 'history-preprocessing',
+          icon: <ToolOutlined />,
+          label: <Link to="/stacking/training">模型融合训练</Link>,
+        },
+        {
+          key: 'history-training',
+          icon: <ExperimentOutlined />,
+          label: <Link to="/stacking/predict">模型融合预测</Link>,
+        }
+      ]
+
+    },
+
     {
       key: 'history',
       icon: <HistoryOutlined />,
