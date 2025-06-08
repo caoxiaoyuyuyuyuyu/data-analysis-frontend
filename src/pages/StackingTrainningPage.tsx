@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card, Form, Select, Button, Steps, Alert, Typography, Row, Col, Space, Spin,
+  Card, Form, Select, Button, Steps, Alert, Typography, Row, Col, Space, Spin,Tabs,
   Input,
   message,
   Slider
@@ -12,6 +12,12 @@ import { addStackingModel } from '../features/stackingtraining/slice';
 import { useAppDispatch } from '../store/hooks';
 import { stackingModelConfigs } from '../features/stackingtraining/modelConfig';
 import { DeploymentUnitOutlined } from '@ant-design/icons';
+import { Descriptions } from 'antd';
+import { format } from 'date-fns';
+import {
+  StackingModelTrainingRequest,
+  StackingModel
+} from '../features/stackingtraining/types';
 
 const { Step } = Steps;
 const { Title } = Typography;
@@ -33,7 +39,7 @@ const StackingTrainingPage = () => {
   const dispatch = useAppDispatch();
 
   // 本地模型配置
-  const [trainingResult, setTrainingResult] = useState<any | null>(null);
+  const [trainingResult, setTrainingResult] = useState<StackingModel | null>(null);
 
   // API hooks
   const { data: files, isLoading: isFilesLoading } = useGetFilesQuery();
@@ -67,7 +73,7 @@ const StackingTrainingPage = () => {
       await form.validateFields(['input_file_id', 'target', 'meta_model_name']);
       
       // 获取表单值
-      const values = form.getFieldsValue();
+      const values = form.getFieldsValue(true);
       
       // 构建训练请求
       const requestData: FormValues = {
@@ -75,11 +81,11 @@ const StackingTrainingPage = () => {
         target: values.target,
         base_model_name: values.base_model_name,
         meta_model_name: values.meta_model_name,
-        task_type: values.task_type,
+        task_type: values.taskType,
         cross_validation: values.cross_validation,
         model_name: values.model_name || `stacking_${Date.now()}`
       };
-
+      console.log('提交训练请求:', requestData);
       // 发送训练请求
       const result = await trainStackingModel(requestData).unwrap();
       setTrainingResult(result);
@@ -110,7 +116,97 @@ const StackingTrainingPage = () => {
 
   const filteredMetaModels = stackingModelConfigs
     .filter(c => c.type === 'meta' && c.category === taskType);
+  const renderTrainingResult = () => {
+    if (!trainingResult) return null;
 
+    // 指标卡片配置
+    const metricsItems = [
+      {
+        key: '1',
+        label: '模型信息',
+        children: (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="模型名称">{trainingResult.model_name}</Descriptions.Item>
+            <Descriptions.Item label="训练时间">
+              {format(new Date(trainingResult.created_at), 'yyyy-MM-dd HH:mm:ss')}
+            </Descriptions.Item>
+            <Descriptions.Item label="训练时长">
+              {trainingResult.duration.toFixed(2)} 秒
+            </Descriptions.Item>
+            <Descriptions.Item label="模型大小">
+              {trainingResult.model_file_size} k
+            </Descriptions.Item>
+            <Descriptions.Item label="数据文件">
+              <span 
+                style={{ 
+                  color: 'blue', 
+                  textDecoration: 'underline', 
+                  cursor: 'pointer' 
+                }} 
+                // onClick={() => HandleDownlad(trainingResult.id)}
+                title="下载模型"
+              >
+                {trainingResult.model_file_path.split(/[\\\/]/).pop() || 'model.pkl'}
+              </span>
+            </Descriptions.Item>
+          </Descriptions>
+        )
+      },
+      {
+        key: '2',
+        label: '评估指标',
+        children: (
+          <Descriptions bordered column={2}>
+            {Object.entries(trainingResult.metrics).map(([key, value]) => (
+              <Descriptions.Item key={key} label={key.toUpperCase()}>
+                {typeof value === 'number' ? value.toFixed(4) : value}
+              </Descriptions.Item>
+            ))}
+          </Descriptions>
+        )
+      }
+    ];
+
+    return (
+      <div style={{ marginTop: 24 }}>
+        <Alert
+          message="训练结果"
+          type="success"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
+        <Tabs
+          defaultActiveKey="1"
+          items={[
+            {
+              key: '2',
+              label: '模型信息',
+              children: (
+                <Tabs
+                  defaultActiveKey="1"
+                  items={metricsItems}
+                />
+              )
+            },
+            // {
+            //   key: '3',
+            //   label: '参数详情',
+            //   children: (
+            //     <Descriptions bordered column={2}>
+            //       {Object.entries(trainingResult.model_parameters).map(([key, value]) => (
+            //         <Descriptions.Item key={key} label={key}>
+            //           {typeof value === 'boolean' ? (value ? '是' : '否') : value}
+            //         </Descriptions.Item>
+            //       ))}
+            //     </Descriptions>
+            //   )
+            // }
+          ]}
+        />
+      </div>
+    );
+  };
   return (
     <Card
       title={
@@ -231,6 +327,7 @@ const StackingTrainingPage = () => {
           )}
         </Form>
       </Spin>
+      {trainingResult && renderTrainingResult()}
     </Card>
   );
 };

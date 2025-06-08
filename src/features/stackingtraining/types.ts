@@ -32,14 +32,14 @@ export type StackingModel = {
     train_scores: number[];
     test_scores: number[];
   };
-  model_parameters: {
-    base_models: Array<{
-      model_id: string;
-      parameters: Record<string, any>;
-    }>;
-    meta_model: {
-      model_id: string;
-      parameters: Record<string, any>;
-    };
-  };
+  // model_parameters: {
+  //   base_models: Array<{
+  //     model_id: string;
+  //     parameters: Record<string, any>;
+  //   }>;
+  //   meta_model: {
+  //     model_id: string;
+  //     parameters: Record<string, any>;
+  //   };
+  // };
 };
