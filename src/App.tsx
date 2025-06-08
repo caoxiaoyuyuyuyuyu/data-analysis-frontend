@@ -15,7 +15,9 @@ import {
   UploadPage,
   PredictionPage,
   PredictionsHistoryPage,
-  FilePreviewPage
+  FilePreviewPage,
+  StackingTrainingPage,
+  StackingPredictPage
 } from './pages';
 
 function App() {
@@ -37,6 +39,8 @@ function App() {
           <Route path="preprocessing/:fileId" element={<PreprocessingPage />} />
           <Route path="training" element={<ModelTrainingPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="stacking/training" element={<StackingTrainingPage />} />
+          <Route path="stacking/predict" element={<StackingPredictPage />} />
           {/* 添加重定向 */}
           <Route path="/home" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFoundPage />} />

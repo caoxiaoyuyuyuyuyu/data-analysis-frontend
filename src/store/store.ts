@@ -11,6 +11,7 @@ import { historyApi } from '../features/history/api';
 import { preprocessingApi } from '../features/preprocessing/api';
 import { modelsApi } from '../features/models/api';
 import { predictApi } from '../features/predict/api';
+import { stackingApi } from '../features/stackingtraining/api'
 
 
 
@@ -28,6 +29,7 @@ export const store = configureStore({
     [predictApi.reducerPath]: predictApi.reducer,
     [historyApi.reducerPath]: historyApi.reducer,
     [preprocessingApi.reducerPath]: preprocessingApi.reducer,
+    [stackingApi.reducerPath]: stackingApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -37,7 +39,8 @@ export const store = configureStore({
       .concat(predictApi.middleware)
       .concat(historyApi.middleware)
       .concat(preprocessingApi.middleware)
-      .concat(modelsApi.middleware),
+      .concat(modelsApi.middleware)
+      .concat(stackingApi.middleware),
 });
 
 setupListeners(store.dispatch);
