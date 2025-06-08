@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Layout, Menu, theme, Avatar, Dropdown, Space, Spin, message } from 'antd';
+import { Layout, Menu, theme, Avatar, Dropdown, Space, Spin, message, Switch, Tooltip, ConfigProvider } from 'antd';
 import {
   DashboardOutlined,
   UploadOutlined,
@@ -9,12 +9,15 @@ import {
   UserOutlined,
   LogoutOutlined,
   HomeOutlined,
-  ToolOutlined
+  ToolOutlined,
+  BulbOutlined,
+  BulbFilled,
 } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout, setCredentials } from '../features/auth/slice';
-import { Children, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useVerifyTokenQuery, useLogoutMutation } from '../features/auth/api';
+import type { MenuProps } from 'antd';
 
 const { Header, Content, Sider } = Layout;
 
@@ -27,8 +30,12 @@ const MainLayout = () => {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const location = useLocation();
   
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [logoutMutation] = useLogoutMutation();
+  const [darkSidebar, setDarkSidebar] = useState<boolean>(() => {
+    const saved = localStorage.getItem('darkSidebar');
+    return saved === 'true';
+  });
   
   // 获取本地token
   const token = localStorage.getItem('token');
@@ -55,7 +62,7 @@ const MainLayout = () => {
     }
   }, [data, error, dispatch, shouldSkip]);
 
-  const handleLogout = async () => {
+  const handleLogout = async (): Promise<void> => {
     try {
       // 1. 调用后端注销接口
       await logoutMutation().unwrap();
@@ -75,6 +82,12 @@ const MainLayout = () => {
       message.error('退出登录失败');
     }
   };
+
+  const toggleSidebarTheme = (checked: boolean): void => {
+    setDarkSidebar(checked);
+    localStorage.setItem('darkSidebar', checked.toString());
+  };
+
 
   // 允许访问的未认证路由
   const allowedPaths = ['/login', '/register', '/forgot-password'];
@@ -98,7 +111,7 @@ const MainLayout = () => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const items = [
+  const items: MenuProps['items'] = [
     {
       key: 'index',
       icon: <HomeOutlined />,
@@ -114,11 +127,6 @@ const MainLayout = () => {
       icon: <UploadOutlined />,
       label: <Link to="/upload">数据上传</Link>,
     },
-    // {
-    //   key: 'preprocessing',
-    //   icon: <ToolOutlined />,
-    //   label: <Link to="/preprocessing">数据预处理</Link>
-    // },
     {
       key: 'training',
       icon: <ExperimentOutlined />,
@@ -150,7 +158,6 @@ const MainLayout = () => {
           label: <Link to="/history/predictions">预测记录</Link>,
         }
       ]
-
     },
     {
       key: 'profile',
@@ -160,7 +167,7 @@ const MainLayout = () => {
   ];
 
   // 根据当前路由动态设置选中的菜单项
-  const getSelectedKeys = () => {
+  const getSelectedKeys = (): string[] => {
     const path = location.pathname;
     if (path === '/') return ['index'];
     if (path === '/dashboard') return ['dashboard'];
@@ -191,56 +198,74 @@ const MainLayout = () => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible>
-        <div 
-          className="logo" 
-          style={{ 
-            height: '32px',
-            margin: '16px',
-            background: 'rgba(255, 255, 255, 0.2)',
-            textAlign: 'center',
-            color: 'white',
-            lineHeight: '32px'
-          }} 
-          onClick={() => navigate('/')}
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sider 
+          collapsible
+          theme={darkSidebar ? 'dark' : 'light'}
+          style={{
+            background: darkSidebar ? undefined : '#fff',
+          }}
         >
-          数据分析平台
-        </div>
-        <Menu
-          theme="dark"
-          selectedKeys={getSelectedKeys()}
-          mode="inline"
-          items={items}
-        />
-      </Sider>
-      <Layout>
-        <Header style={{ 
-          padding: 0,
-          background: colorBgContainer,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          paddingRight: '24px'
-        }}>
-          <Dropdown menu={{ items: userMenuItems }}>
-            <Space>
-              <Avatar icon={<UserOutlined />} />
-              <span>{user?.username}</span>
-            </Space>
-          </Dropdown>
-        </Header>
-        <Content style={{ margin: '16px' }}>
-          <div style={{ 
-            padding: 24,
-            minHeight: 360,
-            background: colorBgContainer,
-          }}>
-            <Outlet />
+          <div 
+            className="logo" 
+            style={{ 
+              height: '32px',
+              margin: '16px',
+              background: darkSidebar ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
+              color: darkSidebar ? 'white' : 'rgba(0, 0, 0, 0.85)',
+              lineHeight: '32px',
+              cursor: 'pointer'
+            }} 
+            onClick={() => navigate('/')}
+          >
+            数据分析平台
           </div>
-        </Content>
+          <Menu
+            theme={darkSidebar ? 'dark' : 'light'}
+            selectedKeys={getSelectedKeys()}
+            mode="inline"
+            items={items}
+          />
+        </Sider>
+        <Layout>
+          <Header style={{ 
+            padding: 0,
+            background: colorBgContainer,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            paddingRight: '24px',
+            gap: '16px'
+          }}>
+            <Tooltip title={darkSidebar ? '切换到亮色主题' : '切换到暗黑主题'}>
+              <Switch 
+                checked={darkSidebar}
+                onChange={toggleSidebarTheme}
+                checkedChildren={<BulbFilled />}
+                unCheckedChildren={<BulbOutlined />}
+              />
+            </Tooltip>
+            
+            <Dropdown menu={{ items: userMenuItems }}>
+              <Space style={{ cursor: 'pointer', padding: '0 12px' }}>
+                <Avatar src="local-avatar.png" />
+                <span>{user?.username}</span>
+              </Space>
+            </Dropdown>
+          </Header>
+          <Content style={{ margin: '16px' }}>
+            <div style={{ 
+              padding: 24,
+              minHeight: 360,
+              background: colorBgContainer,
+              borderRadius: 8
+            }}>
+              <Outlet />
+            </div>
+          </Content>
+        </Layout>
       </Layout>
-    </Layout>
   );
 };
 
