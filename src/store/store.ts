@@ -11,7 +11,7 @@ import { historyApi } from '../features/history/api';
 import { preprocessingApi } from '../features/preprocessing/api';
 import { modelsApi } from '../features/models/api';
 import { predictApi } from '../features/predict/api';
-import { stackingApi } from '../features/stackingtraining/api'
+import { stackingApi } from '../features/stacking_training/api'
 
 
 

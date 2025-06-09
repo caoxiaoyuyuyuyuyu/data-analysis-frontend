@@ -139,6 +139,10 @@ const renderInputData = (data: any): ReactNode => {
               
               // 按值排序，最大的在最前面
               pieData.sort((a, b) => b.value - a.value);
+              if (pieData.length > 10) {
+                pieData.splice(10);
+                pieData.push({ name: '其他', value: pieData.reduce((acc, cur) => acc + cur.value, 0) });
+              }
               
               return (
                 <tr key={key}>

@@ -7,17 +7,17 @@ import {
 } from 'antd';
 import { useGetFilesQuery } from '../features/files/api';
 import { useGetFileDataQuery } from '../features/preprocessing/api';
-import { useTrainStackingModelMutation } from '../features/stackingtraining/api'
-import { addStackingModel } from '../features/stackingtraining/slice';
+import { useTrainStackingModelMutation } from '../features/stacking_training/api'
+import { addStackingModel } from '../features/stacking_training/slice';
 import { useAppDispatch } from '../store/hooks';
-import { stackingModelConfigs } from '../features/stackingtraining/modelConfig';
+import { stackingModelConfigs } from '../features/stacking_training/modelConfig';
 import { DeploymentUnitOutlined } from '@ant-design/icons';
 import { Descriptions } from 'antd';
 import { format } from 'date-fns';
 import {
   StackingModelTrainingRequest,
   StackingModel
-} from '../features/stackingtraining/types';
+} from '../features/stacking_training/types';
 
 const { Step } = Steps;
 const { Title } = Typography;

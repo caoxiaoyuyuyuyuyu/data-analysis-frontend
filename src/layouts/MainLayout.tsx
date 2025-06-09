@@ -12,6 +12,7 @@ import {
   ToolOutlined,
   BulbOutlined,
   BulbFilled,
+  XOutlined,
 } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { logout, setCredentials } from '../features/auth/slice';
@@ -140,18 +141,22 @@ const MainLayout = () => {
 
     {
       key: 'stacking',
-      icon: <HistoryOutlined />,
+      icon: <XOutlined />,
       label: "模型融合",
       children: [
         {
-          key: 'history-preprocessing',
-          icon: <ToolOutlined />,
+          key: 'stacking-training',
+          icon: <ExperimentOutlined />,
           label: <Link to="/stacking/training">模型融合训练</Link>,
         },
         {
-          key: 'history-training',
-          icon: <ExperimentOutlined />,
+          key: 'stacking-predict',
+          icon: <LineChartOutlined />,
           label: <Link to="/stacking/predict">模型融合预测</Link>,
+        },{
+          key: 'history-stacking',
+          icon: <HistoryOutlined />,
+          label: <Link to="/stacking/history">模型融合历史</Link>,
         }
       ]
 
@@ -269,7 +274,7 @@ const MainLayout = () => {
             
             <Dropdown menu={{ items: userMenuItems }}>
               <Space style={{ cursor: 'pointer', padding: '0 12px' }}>
-                <Avatar src="local-avatar.png" />
+                <Avatar src="/local-avatar.png" />
                 <span>{user?.username}</span>
               </Space>
             </Dropdown>

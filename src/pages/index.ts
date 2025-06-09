@@ -15,3 +15,4 @@ export { default as PredictionsHistoryPage } from './PredictionsHistoryPage';
 export { default as FilePreviewPage } from './FilePreviewPage';
 export { default as StackingTrainingPage } from './StackingTrainningPage';
 export { default as StackingPredictPage } from './StackingPredictPage';
+export { default as StackingHistoryPage } from './StackingHistoryPage';

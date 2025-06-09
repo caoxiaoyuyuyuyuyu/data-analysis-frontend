@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { PreprocessingHistory, PredictionHistory } from './types';
+import { PreprocessingHistory, PredictionHistory,StackingTrainingHistory, StackingPredictionHistory } from './types';
 import { Model } from '../models/types';
 
 
@@ -15,7 +15,7 @@ export const historyApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Model', 'PredictionHistory', 'PreprocessingHistory'],
+  tagTypes: ['Model', 'PredictionHistory', 'PreprocessingHistory', 'StackingPredictionHistory', 'StackingTrainingHistory'],
   endpoints: (builder) => ({
     // 获取训练历史记录
     getTrainingHistory: builder.query<Model[], void>({
@@ -101,6 +101,25 @@ export const historyApi = createApi({
       }),
       invalidatesTags: ['PredictionHistory'],
     }),
+
+    getStackingTrainingHistory: builder.query<StackingTrainingHistory[], void>({
+      query: () => 'stacking_traing',
+      providesTags: ['StackingPredictionHistory'],
+      transformResponse: (response: StackingTrainingHistory[]) => 
+        response.map(item => ({
+          ...item,
+          duration: (new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 1000,
+        })),
+    }),
+
+    getStackingPredictionHistory: builder.query<StackingPredictionHistory[], void>({
+      query: () => `stacking_prediction`,
+      providesTags: ['StackingPredictionHistory'],
+      transformResponse: (response: StackingPredictionHistory[]) => 
+        response.map(item => ({
+          ...item,
+        })),
+    }),
   }),
 });
 
@@ -111,8 +130,11 @@ export const {
   useGetTrainingHistoryQuery,
   useGetTrainingRecordQuery,
   useDeleteTrainingRecordMutation,
+  useDeletePredictionRecordMutation,
+
   // 预测历史 (新增)
   useGetPredictionHistoryQuery,
   useGetPredictionRecordQuery,
-  useDeletePredictionRecordMutation,
+  useGetStackingTrainingHistoryQuery,
+  useGetStackingPredictionHistoryQuery,
 } = historyApi;
